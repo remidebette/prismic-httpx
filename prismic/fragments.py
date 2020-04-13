@@ -1,6 +1,12 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+prismic.fragments
+~~~~~~~~~~~~~~~~~
+
+This module implements the Fragments.
+
+"""
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
 import html
@@ -130,7 +136,7 @@ class Fragment(object):
 
             :param field: String with a name of the field to get.
             :param link_resolver: A resolver function for document links.
-            Will be called with :class:`prismic.fragments.Fragment.DocumentLink <prismic.fragments.Fragment.DocumentLink>`
+            Will be called with :class:`~prismic.fragments.Fragment.DocumentLink`
             object as argument. Resolver function should return a string, the local url to the document.
             """
             fragment = self.fragments.get(field)
@@ -241,8 +247,9 @@ class Fragment(object):
             """Get the DocumentLink as html.
 
             :param documentlink_resolver: A resolver function will be called with
-            :class:`prismic.fragments.Fragment.DocumentLink <prismic.fragments.Fragment.DocumentLink>` object as
-            argument. Resolver function should return a string, the local url to the document.
+            :class:`~prismic.fragments.Fragment.DocumentLink` object as argument.
+            Resolver function should return a string, the local url to the document.
+
             """
             return """<a href="%(link)s">%(slug)s</a>""" % {
                 "link": self.get_url(documentlink_resolver),

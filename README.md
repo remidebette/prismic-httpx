@@ -1,7 +1,7 @@
 ## Asyncio alternative of the Python client for prismic.io
 
-[![Latest Version](https://pypip.in/version/httpx-prismic/badge.svg)](https://pypi.python.org/pypi/prismic/)
-[![Build Status](https://api.travis-ci.org/remidebette/python-kit.png)](https://travis-ci.org/prismicio/python-httpx-kit)
+[![Latest Version](https://img.shields.io/pypi/v/prismic-httpx.svg)](https://pypi.org/project/prismic-httpx/)
+[![Build Status](https://api.travis-ci.org/remidebette/prismic-httpx.png)](https://travis-ci.org/remidebette/prismic-httpx)
 
 Disclaimer: I am not affiliated with the Prismic team and do not provide professional support.
 
@@ -55,7 +55,7 @@ u'Speculoos Macaron'
 
 #### Using Memcached (or any other cache)
 
-By default, the kit will use the basic in-memory cache of [aiocache](https://github.com/argaen/aiocache).
+By default, the kit will use a basic [in-memory cache](https://github.com/argaen/aiocache).
 
 For use of more advanced caches (Redis, memcached), see [aiocache](https://github.com/argaen/aiocache)
 

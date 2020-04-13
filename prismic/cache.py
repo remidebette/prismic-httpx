@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 
+"""
+prismic.cache
+~~~~~~~~~~~~~
+
+This module implements caches.
+
+"""
 import os
 import tempfile
 import shelve

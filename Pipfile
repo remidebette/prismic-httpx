@@ -9,6 +9,7 @@ pytest-asyncio = "*"
 setuptools = "*"
 wheel = "*"
 twine = "*"
+sphinx = "*"
 
 [packages]
 httpx = "*"
