@@ -1,3 +1,5 @@
+os: linux
+dist: xenial
 language: python
 python:
 - '3.7'
@@ -5,13 +7,12 @@ python:
 install: pip install -U pipenv; pipenv sync --dev
 script:
   - pytest
-  - cd docs && make html && cd ..
-sudo: false
+  - cd docs && make html && touch .nojekyll && cd ..  # Github Pages will not host the _static folder without .nojekyll
 deploy:
   - provider: pypi
     skip_cleanup: true
     skip_existing: true
-    user: __token__
+    username: __token__
     password:
       secure: fAuVvmYB8K+YHu09x/XVHtKwC334RVZdrp5DWK2rcJuoy3MocTsBh5maMxDncQhepo2rFCzTjvjo145PwSTvWWBpLdagu1qSxcagRyie3LsmvpXuJ0I/9ZgGttzYAvKaCD1B/a/VjwugnI3I0UacT8p9lhjmHubQhK+EkgUxwy/sRHx6btRy/Zc+1RBugvJULL3PVe5hz0fBJO7VVz0dnynqcPeV9cE9EWq69faMaZJWhdIj+DXucFc8MmPXYb6T7I2Ig4/WXQLGsq8VRNCm54kfi0+6lmOwFhbrPeOVGCvKjMRJBsP4Tv6l0uLJhEQkvMq+lzLrcup7+93vICjA0a8R7VvMQd7kYLcOXLwqiGPSRKtMlZ8pvJlA447PbSm25yebeiS92VvSC4eEE3zp3P8Otzw7QDbdekndJS5lixeItcUPIk/EPmZYacCjdrUc2mE+LhvTn6sAISKChZGMh4d7+XVNTCE/dvW5k5MfuK92XqVHmjBhbtdmn2C8lYKRnk6oTSr4STtOHC4i7f/2Z1LvFt6I6Jy38na1oUazzVMdLT6Xzsl4JjHmGQlER5BBAV1Ni5ixog9vmhWXCx5v8SsC7ij333RhFO0AAF1GUxJ3GDQzxHFKjl2sBo3o2AZ3sX92OTkKM36MWThkEAJKuDyNISgZi/YwHdgvVc9/FzQ=
     on:
@@ -19,9 +20,10 @@ deploy:
       repo: remidebette/prismic-httpx
   - provider: pages
     skip_cleanup: true
-    github_token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+    token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
     keep_history: true
     local_dir: docs/_build/html
+    strategy: git
     on:
       tags: true
       repo: remidebette/prismic-httpx
