@@ -3,9 +3,9 @@
 
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
-from collections import namedtuple, defaultdict, OrderedDict
+import html
+from collections import namedtuple, defaultdict
 import logging
-import cgi
 import re
 import datetime
 
@@ -173,13 +173,13 @@ class Fragment(object):
             return None
 
         def as_html(self, link_resolver):
-            html = []
+            html_list = []
             for key, fragment in list(self.fragments.items()):
-                html.append("""<section data-field="%s">""" % key)
-                html.append(self.fragment_to_html(fragment, link_resolver))
-                html.append("""</section>""")
+                html_list.append("""<section data-field="%s">""" % key)
+                html_list.append(self.fragment_to_html(fragment, link_resolver))
+                html_list.append("""</section>""")
 
-            return ''.join(html)
+            return ''.join(html_list)
 
         def __getitem__(self, name):
             return self.fragments[name]
@@ -214,7 +214,7 @@ class Fragment(object):
 
     class DocumentLink(WithFragments, Link):
         def __init__(self, value):
-            Fragment.WithFragments.__init__(self, OrderedDict())
+            Fragment.WithFragments.__init__(self, {})
 
             document = value.get("document")
 
@@ -454,7 +454,7 @@ class Fragment(object):
 
         @property
         def as_html(self):
-            return """<span class="text">%s</span>""" % cgi.escape(self.value)
+            return """<span class="text">%s</span>""" % html.escape(self.value)
 
     class Date(BasicFragment):
 
@@ -481,16 +481,16 @@ class Fragment(object):
         def __init__(self, value):
             self.value = []
             for elt in value:
-                fragments = OrderedDict()
+                fragments = {}
                 for name, frag in elt.items():
                     fragments[name] = Fragment.from_json(frag)
                 self.value.append(Fragment.WithFragments(fragments))
 
         def as_html(self, link_resolver):
-            html = []
+            html_list = []
             for group_doc in self.value:
-                html.append(group_doc.as_html(link_resolver))
-            return "\n".join(html)
+                html_list.append(group_doc.as_html(link_resolver))
+            return "\n".join(html_list)
 
         def __iter__(self):
             return iter(self.value)
@@ -572,10 +572,10 @@ class Fragment(object):
                     self.slices.append(Fragment.CompositeSlice(slice_type, slice_label, elt))
 
         def as_html(self, link_resolver):
-            html = []
+            html_list = []
             for slice in self.slices:
-                html.append(slice.as_html(link_resolver))
-            return "\n".join(html)
+                html_list.append(slice.as_html(link_resolver))
+            return "\n".join(html_list)
 
         def __iter__(self):
             return iter(self.slices)
@@ -648,19 +648,19 @@ class StructuredText(object):
                 else:
                     groups.append(StructuredText.Group(None, [block]))
 
-        html = []
+        html_list = []
         for group in groups:
             if group.tag is not None:
-                html.append("<%(tag)s>" % group.__dict__)
+                html_list.append("<%(tag)s>" % group.__dict__)
             for block in group.blocks:
                 content = ""
                 if isinstance(block, Text):
                     content = StructuredText.span_as_html(block.text, block.spans, link_resolver, html_serializer)
-                html.append(StructuredText.block_as_html(block, content, link_resolver, html_serializer))
+                html_list.append(StructuredText.block_as_html(block, content, link_resolver, html_serializer))
             if group.tag is not None:
-                html.append("</%(tag)s>" % group.__dict__)
+                html_list.append("</%(tag)s>" % group.__dict__)
 
-        html_str = ''.join(html)
+        html_str = ''.join(html_list)
         log.debug("as_html result: %s" % html_str)
         return html_str
 
@@ -711,7 +711,7 @@ class StructuredText(object):
 
     @staticmethod
     def span_as_html(text, spans, link_resolver, html_serializer):
-        html = []
+        html_list = []
         tags_start = defaultdict(list)
         tags_end = defaultdict(list)
         for span in spans:
@@ -730,7 +730,7 @@ class StructuredText(object):
                     inner_html = StructuredText.span_write_tag(tag["span"], tag["content"], link_resolver, html_serializer)
                     if len(stack) == 0:
                         # The tag was top-level
-                        html.append(inner_html)
+                        html_list.append(inner_html)
                     else:
                         # Add the content to the parent tag
                         stack[-1]["content"] += inner_html
@@ -744,10 +744,10 @@ class StructuredText(object):
                     })
             if len(stack) == 0:
                 # Top-level text
-                html.append(cgi.escape(letter))
+                html_list.append(html.escape(letter))
             else:
                 # Inner text of a span
-                stack[-1]["content"] += cgi.escape(letter)
+                stack[-1]["content"] += html.escape(letter)
 
         # Check for the tags after the end of the string
         while len(stack) > 0:
@@ -756,12 +756,12 @@ class StructuredText(object):
             inner_html = StructuredText.span_write_tag(tag["span"], tag["content"], link_resolver, html_serializer)
             if len(stack) == 0:
                 # The tag was top-level
-                html.append(inner_html)
+                html_list.append(inner_html)
             else:
                 # Add the content to the parent tag
                 stack[-1]["content"] += inner_html
 
-        return ''.join(html)
+        return ''.join(html_list)
 
 
 class Span(object):

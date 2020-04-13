@@ -6,5 +6,7 @@ docs/_build
 prismic.egg-info/
 cache.db
 node_modules/
+build/
+*.egg-info/
 
 .eggs

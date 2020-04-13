@@ -15,11 +15,11 @@ gulp.task('deploy:gist', function () {
         .pipe(gist());
 });
 
-gulp.task('dist', ['deploy:doc', 'deploy:gist']);
+gulp.task('dist', gulp.series(['deploy:doc', 'deploy:gist']));
 
 /**
  * Default task
  */
 
-gulp.task('default', ['deploy:gist']);
+gulp.task('default', gulp.series('deploy:gist'));
 

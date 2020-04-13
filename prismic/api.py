@@ -11,13 +11,17 @@ This module implements the Prismic API.
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
 import sys
+from contextlib import asynccontextmanager
 from copy import copy, deepcopy
+
+import httpx
+from aiocache import Cache
+
 from .connection import get_json, urlparse
 from .experiments import Experiments
 from . import predicates
 from .exceptions import RefMissing
 from .fragments import Fragment
-from collections import OrderedDict
 
 from .utils import string_types
 import logging
@@ -25,20 +29,49 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def get(url, access_token=None, cache=None, request_handler=None):
+@asynccontextmanager
+async def get(url, access_token=None, cache=None, **client_kwargs):
+    """Fetches the prismic api JSON. Generates only one httpx client for the async context.
+    Yields :class:`Api <Api>` object.
+
+    Usage:
+    >>> import prismic
+    >>> async with prismic.get("http://your-repo.prismic.io/api", "access_token") as api:
+    ...     doc = await api.get_by_uid("speculoos-macaron")
+
+    :param url: URL to the api of the repository (mandatory).
+    :param access_token: The access token (optional).
+    :param cache: The cache object. Optional, will default to a in-memory cache if None is passed.
+    """
+    if cache is None:
+        cache = Cache(Cache.MEMORY)
+
+    async with httpx.AsyncClient(**client_kwargs) as client:
+        yield Api(
+            await get_json(url, access_token=access_token, cache=cache, ttl=5, client=client),
+            access_token,
+            cache,
+            client
+        )
+
+
+async def get_with_client(url, access_token=None, cache=None, client=None):
     """Fetches the prismic api JSON.
     Returns :class:`Api <Api>` object.
 
     :param url: URL to the api of the repository (mandatory).
     :param access_token: The access token (optional).
-    :param cache: The cache object. Optional, will default to a file-based cache if None is passed.
-    :param request_handler: The request handler. Optional, will default to a request handler based on requests module.
+    :param cache: The cache object. Optional, will default to a in-memory cache if None is passed.
+    :param client: The httpx client. If not passed, one client will be created for each subsequent http request.
     """
+    if cache is None:
+        cache = Cache(Cache.MEMORY)
+
     return Api(
-        get_json(url, access_token=access_token, cache=cache, ttl=5, request_handler=request_handler),
+        await get_json(url, access_token=access_token, cache=cache, ttl=5, client=client),
         access_token,
         cache,
-        request_handler
+        client
     )
 
 
@@ -53,9 +86,9 @@ class Api(object):
     :ivar str access_token: current access token (may be None)
     """
 
-    def __init__(self, data, access_token, cache, request_handler):
+    def __init__(self, data, access_token, cache, client):
         self.cache = cache
-        self.request_handler = request_handler
+        self.client = client
         self.refs = [Ref(ref) for ref in data.get("refs")]
         self.bookmarks = data.get("bookmarks")
         self.types = data.get("types")
@@ -75,7 +108,7 @@ class Api(object):
         if not self.master:
             log.error("No master reference found")
 
-    def preview_session(self, token, link_resolver, default_url):
+    async def preview_session(self, token, link_resolver, default_url):
         """Return the URL to display a given preview
 
         :param token as received from Prismic server to identify the content to preview
@@ -85,10 +118,11 @@ class Api(object):
 
         :return: the URL to redirect the user to
         """
-        main_document_id = get_json(token, request_handler=self.request_handler).get("mainDocument")
+        resp = await get_json(token, client=self.client)
+        main_document_id = resp.get("mainDocument")
         if main_document_id is None:
             return default_url
-        doc = self.get_by_id(main_document_id, ref=token)
+        doc = await self.get_by_id(main_document_id, ref=token)
         if doc is None == 0:
             return default_url
         return link_resolver(doc.as_link())
@@ -115,9 +149,9 @@ class Api(object):
         form = self.forms.get(name)
         if form is None:
             raise Exception("Bad form name %s, valid form names are: %s" % (name, ', '.join(self.forms)))
-        return SearchForm(self.forms.get(name), self.access_token, self.cache, self.request_handler)
+        return SearchForm(self.forms.get(name), self.access_token, self.cache, self.client)
 
-    def query(self, q, ref=None, page_size=None, page=None, orderings=None, after=None, fetch_links=None):
+    async def query(self, q, ref=None, page_size=None, page=None, orderings=None, after=None, fetch_links=None):
         if ref is None:
             ref = self.get_master()
         form = self.form('everything').ref(ref)
@@ -131,21 +165,22 @@ class Api(object):
             form.after(after)
         if fetch_links is not None:
             form.fetch_links(fetch_links)
-        return form.query(q).submit()
+        return await form.query(q).submit()
 
-    def query_first(self, q, ref=None):
-        documents = self.query(q, ref, page_size=1, page=1).documents
+    async def query_first(self, q, ref=None):
+        resp = await self.query(q, ref, page_size=1, page=1)
+        documents = resp.documents
         if len(documents) > 0:
             return documents[0]
 
-    def get_by_uid(self, type, uid, ref=None):
-        return self.query_first(predicates.at('my.' + type + '.uid', uid), ref)
+    async def get_by_uid(self, type, uid, ref=None):
+        return await self.query_first(predicates.at('my.' + type + '.uid', uid), ref)
 
-    def get_by_id(self, id, ref=None):
-        return self.query_first(predicates.at('document.id', id), ref)
+    async def get_by_id(self, id, ref=None):
+        return await self.query_first(predicates.at('document.id', id), ref)
 
-    def get_by_ids(self, ids, ref=None, page_size=None, page=None, orderings=None, after=None, fetch_links=None):
-        return self.query(
+    async def get_by_ids(self, ids, ref=None, page_size=None, page=None, orderings=None, after=None, fetch_links=None):
+        return await self.query(
             predicates.in_('document.id', ids),
             ref,
             page_size=page_size,
@@ -155,8 +190,9 @@ class Api(object):
             fetch_links=fetch_links
         )
 
-    def get_single(self, type, ref=None):
-        return self.query_first(predicates.at('document.type', type), ref)
+    async def get_single(self, type, ref=None):
+        return await self.query_first(predicates.at('document.type', type), ref)
+
 
 class Ref(object):
     """
@@ -175,7 +211,7 @@ class SearchForm(object):
     """Form to search for documents. Most of the methods return self object to allow chaining.
     """
 
-    def __init__(self, form, access_token, cache, request_handler):
+    def __init__(self, form, access_token, cache, client):
         self.action = form.get("action")
         self.method = form.get("method")
         self.enctype = form.get("enctype")
@@ -187,7 +223,7 @@ class SearchForm(object):
                 self.set(field, value["default"])
         self.access_token = access_token
         self.cache = cache
-        self.request_handler = request_handler
+        self.client = client
 
     def ref(self, ref):
         """:param ref: A :class:`Ref <Ref>` object or an string."""
@@ -257,19 +293,19 @@ class SearchForm(object):
         if self.data.get('ref') is None:
             raise RefMissing()
 
-    def submit(self):
+    async def submit(self):
         """
         Submit the query to the Prismic.io server
 
         :return: :class:`Response <prismic.api.Response>`
         """
         self.submit_assert_preconditions()
-        return Response(get_json(
+        return Response(await get_json(
             self.action,
             self.data,
             self.access_token,
             self.cache,
-            request_handler=self.request_handler
+            client=self.client
         ))
 
     def page(self, page_number):
@@ -316,13 +352,14 @@ class SearchForm(object):
         """
         return self.page_size(nb_results)
 
-    def count(self):
+    async def count(self):
         """Count the total number of results
         """
-        return copy(self).pageSize(1).submit().total_results_size
+        resp = await copy(self).pageSize(1).submit()
+        return resp.total_results_size
 
     def __copy__(self):
-        cp = type(self)({}, self.access_token, self.cache, self.request_handler)
+        cp = type(self)({}, self.access_token, self.cache, self.client)
         cp.action = deepcopy(self.action)
         cp.method = deepcopy(self.method)
         cp.enctype = deepcopy(self.enctype)
@@ -376,7 +413,7 @@ class Document(Fragment.WithFragments):
     """
 
     def __init__(self, data):
-        Fragment.WithFragments.__init__(self, OrderedDict())
+        Fragment.WithFragments.__init__(self, {})
         self._data = data
 
         fragments = {}

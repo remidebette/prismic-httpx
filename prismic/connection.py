@@ -7,52 +7,61 @@ prismic.connection
 This module implements the Prismic Connection handlers.
 
 """
+from httpx import InvalidURL
 
 try:  # 2.7
     import urllib.parse as urlparse
 except ImportError:  # 3.x
     import urllib as urlparse
 
-import requests
+import httpx
 import json
 import re
 import platform
-from collections import OrderedDict
-from requests.exceptions import InvalidSchema
 from .exceptions import (InvalidTokenError, AuthorizationNeededError,
                          HTTPError, InvalidURLError)
-from .cache import ShelveCache
+from .cache import NoCache
 from . import __version__ as prismic_version
 
-def get_using_requests(full_url):
-    request = requests.get(full_url, headers={
+
+async def get_using_client(full_url, client=None):
+    headers = {
         "Accept": "application/json",
-        "User-Agent": "Prismic-python-kit/%s Python/%s" % (
+        "User-Agent": "Prismic-httpx-python-kit/%s Python/%s" % (
             prismic_version,
             platform.python_version()
         )
-    })
-    return request.status_code, request.text, request.headers
+    }
 
-def get_json(url, params=None, access_token=None, cache=None, ttl=None, request_handler=None):
+    if client is None:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(full_url, headers=headers)
+
+    else:
+        response = await client.get(full_url, headers=headers)
+
+    return response, response.status_code, response.headers
+
+
+async def get_json(url, params=None, access_token=None, cache=None, ttl=None, client=None):
     full_params = dict() if params is None else params.copy()
     if cache is None:
-        cache = ShelveCache(re.sub(r'/\\', '', url.split('/')[2]))
-    if request_handler is None:
-        request_handler = get_using_requests
+        # TODO: Reimplement ShelveCache using `aiofiles`
+        # cache = ShelveCache(re.sub(r'/\\', '', url.split('/')[2]))
+        cache = NoCache()
     if access_token is not None:
         full_params["access_token"] = access_token
-    full_url = url if len(full_params) == 0 else (url + "?" + urlparse.urlencode(full_params, doseq=1))
-    cached = cache.get(full_url)
+    full_url = url if len(full_params) == 0 else (url + "?" + urlparse.urlencode(full_params, doseq=True))
+    cached = await cache.get(full_url)
     if cached is not None:
         return cached
     try:
-        status_code, text_result, headers = request_handler(full_url)
+        result, status_code, headers = await get_using_client(full_url, client)
         if status_code == 200:
-            json_result = json.loads(text_result, object_pairs_hook=OrderedDict)
+            json_result = result.json()
             expire = ttl or get_max_age(headers)
             if expire is not None:
-                cache.set(full_url, json_result, expire)
+                await cache.set(full_url, json_result, expire)
             return json_result
         elif status_code == 401:
             if len(access_token) == 0:
@@ -60,8 +69,8 @@ def get_json(url, params=None, access_token=None, cache=None, ttl=None, request_
             else:
                 raise InvalidTokenError()
         else:
-            raise HTTPError(status_code, str(text_result))
-    except InvalidSchema as e:
+            raise HTTPError(status_code, str(result.text))
+    except InvalidURL as e:
         raise InvalidURLError(e)
 
 
