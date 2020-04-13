@@ -1,7 +1,12 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+prismic.experiments
+~~~~~~~~~~~~~~~~~~~
 
+This module implements Experiments.
+
+"""
 class Experiments(object):
     """
     Holds informations about current experiments

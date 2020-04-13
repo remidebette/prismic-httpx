@@ -2,7 +2,7 @@
 
 """
 prismic.exceptions
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 This module contains the set of Prismic exceptions.
 

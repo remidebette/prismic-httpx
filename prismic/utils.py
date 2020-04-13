@@ -2,7 +2,7 @@
 
 """
 prismic.utils
-~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 This module is mostly for internal use.
 

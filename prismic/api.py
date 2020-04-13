@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 @asynccontextmanager
 async def get(url, access_token=None, cache=None, **client_kwargs):
     """Fetches the prismic api JSON. Generates only one httpx client for the async context.
-    Yields :class:`Api <Api>` object.
+    Yields :class:`~Api` object.
 
     Usage:
     >>> import prismic
@@ -57,7 +57,7 @@ async def get(url, access_token=None, cache=None, **client_kwargs):
 
 async def get_with_client(url, access_token=None, cache=None, client=None):
     """Fetches the prismic api JSON.
-    Returns :class:`Api <Api>` object.
+    Returns :class:`~Api` object.
 
     :param url: URL to the api of the repository (mandatory).
     :param access_token: The access token (optional).
@@ -111,10 +111,10 @@ class Api(object):
     async def preview_session(self, token, link_resolver, default_url):
         """Return the URL to display a given preview
 
-        :param token as received from Prismic server to identify the content to preview
-        :param link_resolver the link resolver to build URL for your site
-        :param default_url the URL to default to return if the preview doesn't correspond to a document
-                       (usually the home page of your site)
+        :param token: as received from Prismic server to identify the content to preview
+        :param link_resolver: the link resolver to build URL for your site
+        :param default_url: the URL to default to return if the preview doesn't correspond to a document
+        (usually the home page of your site)
 
         :return: the URL to redirect the user to
         """
@@ -128,8 +128,8 @@ class Api(object):
         return link_resolver(doc.as_link())
 
     def get_ref(self, label):
-        """Get the :class:`Ref <Ref>` with a specific label.
-        Returns :class:`Ref <Ref>` object.
+        """Get the :class:`~Ref` with a specific label.
+        Returns :class:`~Ref` object.
 
         :param label: Name of the label.
         """
@@ -137,12 +137,12 @@ class Api(object):
         return ref[0] if ref else None
 
     def get_master(self):
-        """Returns current master :class:`Ref <Ref>` object."""
+        """Returns current master :class:`~Ref` object."""
         return self.master
 
     def form(self, name):
         """Constructs the form with data from Api.
-        Returns :class:`SearchForm <SearchForm>` object.
+        Returns :class:`~SearchForm` object.
 
         :param name: Name of the form.
         """
@@ -226,7 +226,7 @@ class SearchForm(object):
         self.client = client
 
     def ref(self, ref):
-        """:param ref: A :class:`Ref <Ref>` object or an string."""
+        """:param ref: A :class:`~Ref` object or an string."""
 
         if isinstance(ref, Ref):
             ref = ref.ref
@@ -251,7 +251,7 @@ class SearchForm(object):
     def query(self, *argv):
         """:param argv: Either a string query, or any number of Array corresponding to predicates.
 
-        See the :mod:`prismic.predicates <prismic.predicate>` module for helper functions.
+        See the :mod:`~prismic.predicates` module for helper functions.
         """
         if len(argv) == 0:
             return self
@@ -284,7 +284,7 @@ class SearchForm(object):
     def orderings(self, orderings):
         """Sets the query orderings
 
-        :param orderings String with the orderings predicate
+        :param orderings: String with the orderings predicate
         :returns: the SearchForm instance to chain calls
         """
         return self.set("orderings", orderings)
@@ -297,7 +297,7 @@ class SearchForm(object):
         """
         Submit the query to the Prismic.io server
 
-        :return: :class:`Response <prismic.api.Response>`
+        :return: :class:`~prismic.api.Response`
         """
         self.submit_assert_preconditions()
         return Response(await get_json(
@@ -445,7 +445,7 @@ class Document(Fragment.WithFragments):
         """
         Convert the current document to a DocumentLink
 
-        :return: :class:`DocumentLink <prismic.api.Fragment.DocumentLink>`
+        :return: :class:`~prismic.api.Fragment.DocumentLink`
         """
         data = self._data.copy()
         data['slug'] = self.slug

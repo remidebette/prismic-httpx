@@ -2,7 +2,7 @@
 
 """
 prismic.predicates
-~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 This module provides helpers to write predicates to query Prismic
 

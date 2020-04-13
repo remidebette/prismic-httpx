@@ -2,7 +2,7 @@
 
 """
 prismic.connection
-~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 This module implements the Prismic Connection handlers.
 
