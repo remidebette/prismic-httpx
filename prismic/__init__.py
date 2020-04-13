@@ -3,7 +3,7 @@ Prismic.io python library.
 """
 
 __title__ = 'prismic-httpx'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __author__ = 'Rémi DEBETTE'
 __license__ = 'Apache 2'
 
