@@ -2,9 +2,9 @@
 Prismic.io python library.
 """
 
-__title__ = 'prismic'
-__version__ = '1.2.1'
-__author__ = 'Prismic Team'
+__title__ = 'prismic-httpx'
+__version__ = '0.0.1'
+__author__ = 'Rémi DEBETTE'
 __license__ = 'Apache 2'
 
 from .api import get, Api, SearchForm, Document

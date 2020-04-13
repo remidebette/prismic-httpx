@@ -6,25 +6,34 @@ import sys
 from setuptools import setup, find_packages
 import setuptools
 
+import prismic
+
+with open("README.md", encoding="utf8") as fh:
+    long_description = fh.read()
+
 setup(
-    name='prismic',
-    version='1.5.1',
-    description='Prismic.io development kit',
-    author='The Prismic.io Team',
-    author_email='contact@prismic.io',
-    url='http://prismic.io',
+    name='prismic-httpx',
+    version=prismic.__version__,
+    description='Asyncio fork of the Python client for prismic.io',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    author='Rémi DEBETTE',
+    author_email='remi.debette@gmail.com',
+    url='https://github.com/remidebette/prismic-httpx',
     license='Apache 2',
     packages=find_packages(),
     test_suite='tests',
     classifiers=[
+        "Development Status :: 4 - Beta",
         'Operating System :: OS Independent',
         'Intended Audience :: Developers',
-        'Programming Language :: Python :: 2.7'
+        "Environment :: Web Environment",
+        "Framework :: AsyncIO",
+        'Programming Language :: Python :: 3.6'
     ],
     install_requires=[
-        'pyOpenSSL',
-        'ndg-httpsclient',
-        'pyasn1',
-        'requests >= 2.7'
-    ]
+        'httpx',
+        'aiocache'
+    ],
+    python_requires='>=3.6'
 )

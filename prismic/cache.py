@@ -10,18 +10,17 @@ class NoCache(object):
     """
     A simple noop implementation for the cache. Any object implementing the same methods
     (duck typing) is acceptable as a cache backend.
-
-    For example, python-memcached is compatible.
     """
     pass
 
-    def set(self, key, val, ttl=0):
+    async def set(self, key, val, ttl=0):
         pass
 
-    def get(self, key):
+    async def get(self, key):
         return None
 
 
+# TODO: This implementation of ShelveCache is blocking and should not be used
 class ShelveCache(object):
     """
     A cache implementation based on Shelve: https://docs.python.org/2/library/shelve.html.
@@ -41,7 +40,7 @@ class ShelveCache(object):
                 os.makedirs(cache_dir)
             self.db = shelve.open(os.path.join(cache_dir, self.filename))
 
-    def set(self, key, val, ttl=0):
+    async def set(self, key, val, ttl=0):
         self._init_db()
         if type(key) != str:
             key = key.encode('utf8')
@@ -50,7 +49,7 @@ class ShelveCache(object):
             "expire": ShelveCache.unix_time() + ttl
         }
 
-    def get(self, key):
+    async def get(self, key):
         self._init_db()
         if type(key) != str:
             key = key.encode('utf8')

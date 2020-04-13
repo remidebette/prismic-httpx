@@ -214,7 +214,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'prismic', u'Prismic Documentation',
-     [u'Nicolae Namolovan'], 1)
+     [u'Rémi DEBETTE'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -228,7 +228,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Prismic', u'Prismic Documentation',
-   u'Nicolae Namolovan', 'Prismic', 'One line description of project.',
+   u'Rémi DEBETTE', 'Prismic', 'One line description of project.',
    'Miscellaneous'),
 ]
 

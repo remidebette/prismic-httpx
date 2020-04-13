@@ -1,9 +1,9 @@
 {
   "name": "prismic.io",
-  "description": "Python development kit for prismic.io",
-  "url": "https://github.com/prismicio/python-kit",
+  "description": "Async fork of the Python client for prismic.io",
+  "url": "https://github.com/remidebette/prismic-httpx",
   "devDependencies": {
-    "gulp": "~3.8.8",
+    "gulp": "~4.0.2",
     "gulp-gist": "~1.1.0",
     "gulp-gh-pages": "~0.3.4"
   }
