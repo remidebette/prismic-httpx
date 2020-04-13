@@ -5,7 +5,7 @@ python:
 install: pip install -U pipenv; pipenv sync --dev
 script:
   - pytest
-  - cd docs && make html
+  - cd docs && make html && cd ..
 sudo: false
 deploy:
   - provider: pypi
