@@ -24,20 +24,17 @@ import unittest
 # logging.basicConfig(level=logging.DEBUG)
 # log = logging.getLogger(__name__)
 
-
-@fixture()
-def api_url():
-    return "http://micro.prismic.io/api/v1"
+api_url = "http://micro.prismic.io/api/v1"
 
 
-@pytest.mark.asyncio
-async def test_api(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_api():
     async with prismic.get(api_url) as api:
         assert api is not None
 
 
-@pytest.mark.asyncio
-async def test_form(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_form():
     async with prismic.get(api_url) as api:
         query = api.form("everything").ref(api.get_master()).query(predicates.at("document.type", "all"))
         response = await query.submit()
@@ -45,16 +42,16 @@ async def test_form(api_url):
     assert response.results_size >= 2
 
 
-@pytest.mark.asyncio
-async def test_api_private(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_api_private():
     with pytest.raises(InvalidTokenError):
         # This will fail because the token is invalid, but this is how to access a private API
         async with prismic.get(api_url, 'MC5-XXXXXXX-vRfvv70'):
             pass
 
 
-@pytest.mark.asyncio
-async def test_references(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_references():
     preview_token = 'MC5VcXBHWHdFQUFONDZrbWp4.77-9cDx6C3lgJu-_vXZafO-_vXPvv73vv73vv70777-9Ju-_ve-_vSLvv73vv73vv73vv70O77-977-9Me-_vQ'
     async with prismic.get(api_url, preview_token) as api:
         release_ref = api.get_ref('myrelease')
@@ -63,8 +60,8 @@ async def test_references(api_url):
     assert response.results_size >= 1
 
 
-@pytest.mark.asyncio
-async def test_orderings(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_orderings():
     async with prismic.get(api_url) as api:
         response = await api.query(predicates.at("document.type", "all"), page_size=2, orderings='[my.all.number desc]')
 
@@ -73,8 +70,8 @@ async def test_orderings(api_url):
     assert docs[0].get_number('all.number').value >= docs[1].get_number('all.number').value
 
 
-@pytest.mark.asyncio
-async def test_as_html(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_as_html():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -85,8 +82,8 @@ async def test_as_html(api_url):
     assert html is not None
 
 
-@pytest.mark.asyncio
-async def test_html_serializer(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_html_serializer():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -106,8 +103,8 @@ async def test_html_serializer(api_url):
     assert html is not None
 
 
-@pytest.mark.asyncio
-async def test_get_text(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_get_text():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -115,8 +112,8 @@ async def test_get_text(api_url):
     assert author == "all"
 
 
-@pytest.mark.asyncio
-async def test_get_number(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_get_number():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -124,8 +121,8 @@ async def test_get_number(api_url):
     assert price == 20.0
 
 
-@pytest.mark.asyncio
-async def test_get_range(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_get_range():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -133,8 +130,8 @@ async def test_get_range(api_url):
     assert price == '38'
 
 
-@pytest.mark.asyncio
-async def test_images(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_images():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -142,8 +139,8 @@ async def test_images(api_url):
     assert url == 'https://images.prismic.io/micro/e185bb021862c2c03a96bea92e170830908c39a3_thermometer.png?auto=compress,format'
 
 
-@pytest.mark.asyncio
-async def test_date(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_date():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -151,8 +148,8 @@ async def test_date(api_url):
     assert date.as_datetime == datetime.datetime(2017, 1, 16, 0, 0)
 
 
-@pytest.mark.asyncio
-async def test_date_html(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_date_html():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -160,8 +157,8 @@ async def test_date_html(api_url):
     assert date.as_html == '<time>2017-01-16</time>'
 
 
-@pytest.mark.asyncio
-async def test_timestamp(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_timestamp():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -169,8 +166,8 @@ async def test_timestamp(api_url):
     assert timestamp.as_datetime == datetime.datetime(2017, 1, 16, 7, 25, 35)
 
 
-@pytest.mark.asyncio
-async def test_timestamp_html(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_timestamp_html():
     async with prismic.get(api_url) as api:
         doc = await api.get_by_uid('all', 'all')
 
@@ -234,7 +231,7 @@ def test_geopoint():
     assert coordinates == "48.877108,2.333879"
 
 
-def test_cache(api_url):
+def test_cache():
     # Just implement your own cache object by duck-typing
     # https://github.com/prismicio/python-kit/blob/master/prismic/cache.py
     no_cache = NoCache()

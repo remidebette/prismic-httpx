@@ -21,83 +21,29 @@ from aiocache import Cache
 from tests import test_prismic_fixtures
 
 
-@fixture()
-def api_url():
-    return "http://micro.prismic.io/api"
+api_url = "http://micro.prismic.io/api"
+token = "MC5VcXBHWHdFQUFONDZrbWp4.77-9cDx6C3lgJu-_vXZafO-_vXPvv73vv73vv70777-9Ju-_ve-_vSLvv73vv73vv73vv70O77-977-9Me-_vQ"
+fixture_api = json.loads(test_prismic_fixtures.fixture_api)
+fixture_search = json.loads(test_prismic_fixtures.fixture_search)
+fixture_structured_lists = json.loads(test_prismic_fixtures.fixture_structured_lists)
+fixture_empty_paragraph = json.loads(test_prismic_fixtures.fixture_empty_paragraph)
+fixture_block_labels = json.loads(test_prismic_fixtures.fixture_block_labels)
+fixture_store_geopoint = json.loads(test_prismic_fixtures.fixture_store_geopoint)
+fixture_groups = json.loads(test_prismic_fixtures.fixture_groups)
+fixture_image_links = json.loads(test_prismic_fixtures.fixture_image_links)
+fixture_spans_labels = json.loads(test_prismic_fixtures.fixture_spans_labels)
+fixture_custom_html = json.loads(test_prismic_fixtures.fixture_custom_html)
+fixture_slices = json.loads(test_prismic_fixtures.fixture_slices)
+fixture_composite_slices = json.loads(test_prismic_fixtures.fixture_composite_slices)
 
 
 @fixture()
-def token():
-    return "MC5VcXBHWHdFQUFONDZrbWp4.77-9cDx6C3lgJu-_vXZafO-_vXPvv73vv73vv70777-9Ju-_ve-_vSLvv73vv73vv73vv70O77-977-9Me-_vQ"
-
-
-@fixture()
-def fixture_api():
-    return json.loads(test_prismic_fixtures.fixture_api)
-
-
-@fixture()
-def fixture_search():
-    return json.loads(test_prismic_fixtures.fixture_search)
-
-
-@fixture()
-def fixture_structured_lists():
-    return json.loads(test_prismic_fixtures.fixture_structured_lists)
-
-
-@fixture()
-def fixture_empty_paragraph():
-    return json.loads(test_prismic_fixtures.fixture_empty_paragraph)
-
-
-@fixture()
-def fixture_block_labels():
-    return json.loads(test_prismic_fixtures.fixture_block_labels)
-
-
-@fixture()
-def fixture_store_geopoint():
-    return json.loads(test_prismic_fixtures.fixture_store_geopoint)
-
-
-@fixture()
-def fixture_groups():
-    return json.loads(test_prismic_fixtures.fixture_groups)
-
-
-@fixture()
-def fixture_image_links():
-    return json.loads(test_prismic_fixtures.fixture_image_links)
-
-
-@fixture()
-def fixture_spans_labels():
-    return json.loads(test_prismic_fixtures.fixture_spans_labels)
-
-
-@fixture()
-def fixture_custom_html():
-    return json.loads(test_prismic_fixtures.fixture_custom_html)
-
-
-@fixture()
-def fixture_slices():
-    return json.loads(test_prismic_fixtures.fixture_slices)
-
-
-@fixture()
-def fixture_composite_slices():
-    return json.loads(test_prismic_fixtures.fixture_composite_slices)
-
-
-@fixture()
-async def api(fixture_api, token):
+async def api():
     return prismic.Api(fixture_api, token, Cache(Cache.MEMORY), None)
 
 
 @fixture()
-async def integration_api(api_url, token):
+async def integration_api():
     async with prismic.get(api_url, token) as api:
         yield api
 
@@ -117,13 +63,13 @@ def html_serializer(element, content):
     return None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_api(integration_api):
     assert len(integration_api.forms) >= 0
 
 
-@pytest.mark.asyncio
-async def test_api_get_errors(api_url):
+@pytest.mark.asyncio_cooperative
+async def test_api_get_errors():
     with pytest.raises(InvalidTokenError):
         async with prismic.get(api_url, "wrong"):
             pass
@@ -137,7 +83,7 @@ async def test_api_get_errors(api_url):
             pass
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form(integration_api):
     form = integration_api.form("everything")
     form.ref(integration_api.get_master())
@@ -145,7 +91,7 @@ async def test_search_form(integration_api):
     assert len(resp.documents) >= 2
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_orderings(integration_api):
     form = integration_api.form("everything")
     form.ref(integration_api.get_master())
@@ -158,7 +104,7 @@ async def test_search_form_orderings(integration_api):
     assert docs[2].uid == 'all2'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_page_size(integration_api):
     form = integration_api.form("everything").page_size(2)
     form.ref(integration_api.get_master())
@@ -167,7 +113,7 @@ async def test_search_form_page_size(integration_api):
     assert response.results_per_page == 2
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_first_page(integration_api):
     form = integration_api.form("everything").pageSize(2)
     form.ref(integration_api.get_master())
@@ -179,7 +125,7 @@ async def test_search_form_first_page(integration_api):
     assert response.next_page is not None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_page(integration_api):
     form = integration_api.form("everything").pageSize(2).page(2)
     form.ref(integration_api.get_master())
@@ -191,7 +137,7 @@ async def test_search_form_page(integration_api):
     assert response.next_page is not None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_count(integration_api):
     form = integration_api.form("everything")
     form.ref(integration_api.get_master())
@@ -199,7 +145,7 @@ async def test_search_form_count(integration_api):
     assert nb_docs >= 2
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_query(integration_api):
     resp = await integration_api\
         .query(predicates.at('document.id', 'WHx-gSYAAMkyXYX_'))
@@ -207,31 +153,31 @@ async def test_query(integration_api):
     assert doc.id == 'WHx-gSYAAMkyXYX_'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_query_first(integration_api):
     doc = await integration_api.query_first(predicates.at('document.id', 'WHx-gSYAAMkyXYX_'))
     assert doc.id == 'WHx-gSYAAMkyXYX_'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_query_first_no_result(integration_api):
     doc = await integration_api.query_first(predicates.at('document.id', 'NotAValidId'))
     assert doc is None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_by_uid(integration_api):
     doc = await integration_api.get_by_uid('all', 'all')
     assert doc.id == 'WHx-gSYAAMkyXYX_'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_by_id(integration_api):
     doc = await integration_api.get_by_id('WHx-gSYAAMkyXYX_')
     assert doc.id == 'WHx-gSYAAMkyXYX_'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_by_ids(integration_api):
     result = await integration_api.get_by_ids(['WHx-gSYAAMkyXYX_', 'WHyJqyYAAHgyXbcj'])
     ids = sorted([doc.id for doc in result.documents])
@@ -239,13 +185,13 @@ async def test_get_by_ids(integration_api):
     assert ids[1] == 'WHyJqyYAAHgyXbcj'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_single(integration_api):
     doc = await integration_api.get_single('single')
     assert doc.id == 'V_OplCUAACQAE0lA'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_linked_documents(integration_api):
     resp = await integration_api\
         .form("everything")\
@@ -256,7 +202,7 @@ async def test_linked_documents(integration_api):
     assert len(doc.linked_documents) == 2
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_fetch_links(integration_api):
     resp = await integration_api\
         .form('everything')\
@@ -269,7 +215,7 @@ async def test_fetch_links(integration_api):
     assert links[0].get_text('all.text') == 'all1'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_fetch_links_list(integration_api):
     resp = await integration_api\
         .form('everything')\
@@ -296,21 +242,21 @@ def test_get_master(api):
     assert api.get_master().id == "master"
 
 
-def test_document(fixture_search):
+def test_document():
     docs = [prismic.Document(doc) for doc in fixture_search]
     assert len(docs) == 3
     doc = docs[0]
     assert doc.slug == "vanilla-macaron"
 
 
-def test_empty_slug(fixture_search):
+def test_empty_slug():
     doc_json = fixture_search[0]
     doc_json["slugs"] = None
     doc = prismic.Document(doc_json)
     assert doc.slug == "-"
 
 
-def test_as_html(fixture_search):
+def test_as_html():
     doc_json = fixture_search[0]
     doc = prismic.Document(doc_json)
     expected_html = (
@@ -369,7 +315,7 @@ def test_set_page(api):
 
 
 @fixture()
-def doc(fixture_search):
+def doc():
     doc_json = fixture_search[0]
     return prismic.Document(doc_json)
 
@@ -425,7 +371,7 @@ def test_structured_text_paragraph():
     assert p_html == "<h2>a&amp;b 42 &gt; 41</h2>", "Header HTML escape"
 
 
-def test_spans(fixture_spans_labels):
+def test_spans():
     p = prismic.fragments.StructuredText(fixture_spans_labels.get("value"))
     p_html = p.as_html(lambda x: "/x")
     assert p_html == ("""<p>Two <strong><em>spans</em> with</strong> the same start</p>"""
@@ -433,7 +379,7 @@ def test_spans(fixture_spans_labels):
                               """<p>Span till the <span class="tip">end</span></p>""")
 
 
-def test_lists(fixture_structured_lists):
+def test_lists():
     doc_json = fixture_structured_lists[0]
     doc = prismic.Document(doc_json)
     doc_html = doc.get_structured_text("article.content").as_html(lambda x: "/x")
@@ -442,7 +388,7 @@ def test_lists(fixture_structured_lists):
     assert doc_html == expected
 
 
-def test_empty_paragraph(fixture_empty_paragraph):
+def test_empty_paragraph():
     doc_json = fixture_empty_paragraph
     doc = prismic.Document(doc_json)
 
@@ -451,7 +397,7 @@ def test_empty_paragraph(fixture_empty_paragraph):
     assert doc_html == expected
 
 
-def test_block_labels(fixture_block_labels):
+def test_block_labels():
     doc = prismic.Document(fixture_block_labels)
 
     doc_html = doc.get_field('announcement.content').as_html(link_resolver)
@@ -459,7 +405,7 @@ def test_block_labels(fixture_block_labels):
     assert doc_html == expected
 
 
-def test_get_text(fixture_search):
+def test_get_text():
     doc_json = fixture_search[0]
     doc = prismic.Document(doc_json)
     assert doc.get_text('product.description') == 'Experience the ultimate vanilla experience. Our vanilla Macarons are made with our very own (in-house) pure extract of Madagascar vanilla, and subtly dusted with our own vanilla sugar (which we make from real vanilla beans).'
@@ -496,20 +442,20 @@ def test_document_link():
     assert p_html == """<p><strong><a href="/document/UbiYbN_mqXkBOgE2/-">bye</a></strong></p>"""
 
 
-def test_geo_point(fixture_store_geopoint):
+def test_geo_point():
     store = prismic.Document(fixture_store_geopoint)
     geopoint = store.get_field("store.coordinates")
     assert geopoint.as_html == ("""<div class="geopoint"><span class="latitude">37.777431</span>"""
                       """<span class="longitude">-122.415419</span></div>""")
 
 
-def test_group(fixture_groups):
+def test_group():
     contributor = prismic.Document(fixture_groups)
     links = contributor.get_group("contributor.links")
     assert len(links.value) == 2
 
 
-def test_slicezone(fixture_slices):
+def test_slicezone():
     maxDiff = 10000
     doc = prismic.Document(fixture_slices)
     slices = doc.get_slice_zone("article.blocks")
@@ -522,7 +468,7 @@ def test_slicezone(fixture_slices):
     assert slices_html == expected_html
 
 
-def test_composite_slices(fixture_composite_slices):
+def test_composite_slices():
     maxDiff = 1000
     doc = prismic.Document(fixture_composite_slices)
     slices = doc.get_slice_zone("test.body")
@@ -534,39 +480,43 @@ def test_composite_slices(fixture_composite_slices):
     assert len(expected_html) == len(slices_html)
 
 
-def test_image_links(fixture_image_links):
+def test_image_links():
     maxDiff = 10000
     text = prismic.fragments.StructuredText(fixture_image_links.get('value'))
 
-    assert text.as_html(link_resolver) == ("""<p>Here is some introductory text.</p>"""
-         """<p>The following image is linked.</p>"""
-         """<p class="block-img"><a href="http://google.com/">"""
-         """<img src="http://fpoimg.com/129x260" alt="" width="260" height="129" /></a></p>"""
-         """<p><strong>More important stuff</strong></p><p>The next is linked to a valid document:</p>"""
-         """<p class="block-img"><a href="/document/UxCQFFFFFFFaaYAH/something-fantastic">"""
-         """<img src="http://fpoimg.com/400x400" alt="" width="400" height="400" /></a></p>"""
-         """<p>The next is linked to a broken document:</p><p class="block-img"><a href="#broken">"""
-         """<img src="http://fpoimg.com/250x250" alt="" width="250" height="250" /></a></p>"""
-         """<p>One more image, this one is not linked:</p><p class="block-img">"""
-         """<img src="http://fpoimg.com/199x300" alt="" width="300" height="199" /></p>""")
+    assert text.as_html(link_resolver) == (
+        """<p>Here is some introductory text.</p>"""
+        """<p>The following image is linked.</p>"""
+        """<p class="block-img"><a href="http://google.com/">"""
+        """<img src="http://fpoimg.com/129x260" alt="" width="260" height="129" /></a></p>"""
+        """<p><strong>More important stuff</strong></p><p>The next is linked to a valid document:</p>"""
+        """<p class="block-img"><a href="/document/UxCQFFFFFFFaaYAH/something-fantastic">"""
+        """<img src="http://fpoimg.com/400x400" alt="" width="400" height="400" /></a></p>"""
+        """<p>The next is linked to a broken document:</p><p class="block-img"><a href="#broken">"""
+        """<img src="http://fpoimg.com/250x250" alt="" width="250" height="250" /></a></p>"""
+        """<p>One more image, this one is not linked:</p><p class="block-img">"""
+        """<img src="http://fpoimg.com/199x300" alt="" width="300" height="199" /></p>"""
+    )
 
 
-def test_custom_html(fixture_custom_html):
+def test_custom_html():
     maxDiff = 10000
     text = prismic.fragments.StructuredText(fixture_custom_html.get('value'))
 
-    assert text.as_html(link_resolver, html_serializer) == ("""<p>Here is some introductory text.</p>"""
-         """<p>The following image is linked.</p>"""
-         """<a href="http://google.com/"><img src="http://fpoimg.com/129x260" alt="" width="260" height="129" /></a>"""
-         """<p><strong>More important stuff</strong></p><p>The next is linked to a valid document:</p>"""
-         """<a href="/document/UxCQFFFFFFFaaYAH/something-fantastic">"""
-         """<img src="http://fpoimg.com/400x400" alt="" width="400" height="400" /></a>"""
-         """<p>The next is linked to a broken document:</p><a href="#broken">"""
-         """<img src="http://fpoimg.com/250x250" alt="" width="250" height="250" /></a>"""
-         """<p>One more image, this one is not linked:</p>"""
-         """<img src="http://fpoimg.com/199x300" alt="" width="300" height="199" />"""
-         """<p>This <a class="some-link" href="/document/UlfoxUnM0wkXYXbu/les-bonnes-chosess-internship-a-testimony">"""
-         """paragraph</a> contains an hyperlink.</p>""")
+    assert text.as_html(link_resolver, html_serializer) == (
+        """<p>Here is some introductory text.</p>"""
+        """<p>The following image is linked.</p>"""
+        """<a href="http://google.com/"><img src="http://fpoimg.com/129x260" alt="" width="260" height="129" /></a>"""
+        """<p><strong>More important stuff</strong></p><p>The next is linked to a valid document:</p>"""
+        """<a href="/document/UxCQFFFFFFFaaYAH/something-fantastic">"""
+        """<img src="http://fpoimg.com/400x400" alt="" width="400" height="400" /></a>"""
+        """<p>The next is linked to a broken document:</p><a href="#broken">"""
+        """<img src="http://fpoimg.com/250x250" alt="" width="250" height="250" /></a>"""
+        """<p>One more image, this one is not linked:</p>"""
+        """<img src="http://fpoimg.com/199x300" alt="" width="300" height="199" />"""
+        """<p>This <a class="some-link" href="/document/UlfoxUnM0wkXYXbu/les-bonnes-chosess-internship-a-testimony">"""
+        """paragraph</a> contains an hyperlink.</p>"""
+    )
 
 
 def test_at(api):
@@ -637,17 +587,17 @@ def test_geopoint_near(api):
 
 
 @fixture()
-def cache():
+async def cache():
     return Cache(Cache.MEMORY)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_set_get(cache):
     await cache.set("foo", "bar", 3600)
     assert await cache.get("foo") == "bar"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_expiration(cache):
     await cache.set("toto", "tata", 2)
     await asyncio.sleep(3)
