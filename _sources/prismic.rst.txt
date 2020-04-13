@@ -17,10 +17,18 @@ prismic Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`core` Module
-------------------
+:mod:`cache` Module
+-------------------
 
-.. automodule:: prismic.core
+.. automodule:: prismic.cache
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`connection` Module
+------------------------
+
+.. automodule:: prismic.connection
     :members:
     :undoc-members:
     :show-inheritance:
@@ -33,6 +41,14 @@ prismic Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`experiments` Module
+-------------------------
+
+.. automodule:: prismic.experiments
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`fragments` Module
 -----------------------
 
@@ -41,10 +57,10 @@ prismic Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`structured_text` Module
------------------------------
+:mod:`predicates` Module
+------------------------
 
-.. automodule:: prismic.structured_text
+.. automodule:: prismic.predicates
     :members:
     :undoc-members:
     :show-inheritance:

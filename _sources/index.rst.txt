@@ -11,13 +11,13 @@ Python development kit for prismic.io
 Example of use::
 
     >>> import prismic
-    >>> api = prismic.get("http://lesbonneschoses.prismic.io/api", "")
-    >>> form = api.form("everything")
+    >>> async with prismic.get("http://lesbonneschoses.prismic.io/api", "") as api:
+    ...     form = api.form("everything")
+    ...
+    ...     # Set the ref and the query to get all documents of type "product"
+    ...     form.ref(api.get_master()).query("""[[:d = any(document.type, ["product"])]]""")
 
-    >>> # Set the ref and the query to get all documents of type "product"
-    >>> form.ref(api.get_master()).query("""[[:d = any(document.type, ["product"])]]""")
-
-    >>> documents = form.submit().documents
+    ...     documents = await form.submit().documents
     >>> documents[0].get_text("product.name")
     u'Speculoos Macaron'
 
