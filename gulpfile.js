@@ -5,7 +5,7 @@ var gulp = require('gulp'),
 var pkg = require('./package.json');
 
 gulp.task('deploy:doc', function () {
-    gulp.src("./doc/**/*")
+    return gulp.src("./docs/**/*")
         .pipe(deploy());
 });
 
