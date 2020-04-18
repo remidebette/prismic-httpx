@@ -860,3 +860,40 @@ class Block(object):
 
         def get_view(self):
             return self.view
+
+
+class FragmentV2(Fragment):
+
+    _types = None
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a corresponding fragment object from json."""
+
+        if not cls._types:
+            cls._types = {
+                "Image":          Fragment.Image,
+                "Color":          Fragment.Color,
+                "Text":           Fragment.Text,
+                "Select":         Fragment.Text,
+                "Range":          Fragment.Range,
+                "Date":           Fragment.Date,
+                "Timestamp":      Fragment.Timestamp,
+                "StructuredText": StructuredText,
+                "Link.document":  Fragment.DocumentLink,
+                "Link.file":      Fragment.FileLink,
+                "Link.web":       Fragment.WebLink,
+                "Link.image":     Fragment.ImageLink,
+                "Embed":          Fragment.Embed,
+                "GeoPoint":       Fragment.GeoPoint,
+                "Group":          Fragment.Group,
+                "SliceZone":      Fragment.SliceZone
+            }
+
+        fragment_type = data.get("type")
+        f_type = cls._types.get(fragment_type)
+
+        if f_type:
+            return f_type(data.get("value"))
+
+        log.warning("fragment_type not found: %s" % fragment_type)
