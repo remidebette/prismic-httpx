@@ -38,7 +38,7 @@ fixture_composite_slices = json.loads(test_prismic_fixtures.fixture_composite_sl
 
 
 @fixture()
-async def api():
+def api():
     return prismic.Api(fixture_api, token, Cache(Cache.MEMORY), None)
 
 
@@ -586,20 +586,14 @@ def test_geopoint_near(api):
     assert f.data['q'] == ['[[:d = geopoint.near(my.store.coordinates, 40.689757, -74.0451453, 15)]]']
 
 
-@fixture()
-async def cache():
-    return Cache(Cache.MEMORY)
-
-
 @pytest.mark.asyncio_cooperative
-async def test_set_get(cache):
+async def test_expiration():
+    cache = Cache(Cache.MEMORY)
+    await cache.set("toto", "tata", 2)
+    await asyncio.sleep(3)
+
     await cache.set("foo", "bar", 3600)
     assert await cache.get("foo") == "bar"
 
-
-@pytest.mark.asyncio_cooperative
-async def test_expiration(cache):
-    await cache.set("toto", "tata", 2)
-    await asyncio.sleep(3)
     assert await cache.get("toto") is None
 
