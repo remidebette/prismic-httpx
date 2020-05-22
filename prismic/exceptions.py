@@ -37,7 +37,7 @@ class HTTPError(Error):
     def __init__(self, code, message):
         self.code = code
         self.message = message
-        super(HTTPError, self).__init__()
+        super().__init__()
 
     def __str__(self):
         return ("Got an HTTP error %(code)d (%(message)s)" %
@@ -49,7 +49,7 @@ class UnexpectedError(Error):
 
     def __init__(self, message):
         self.message = message
-        super(UnexpectedError, self).__init__()
+        super().__init__()
 
     def __str__(self):
         return self.message

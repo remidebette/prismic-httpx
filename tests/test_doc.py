@@ -21,6 +21,7 @@ import prismic
 from prismic import predicates
 import unittest
 
+
 # logging.basicConfig(level=logging.DEBUG)
 # log = logging.getLogger(__name__)
 
@@ -178,9 +179,53 @@ async def test_timestamp_html(api_url):
     assert timestamp.as_html == '<time>2017-01-16T07:25:35+0000</time>'
 
 
-def test_group():
-    data = "{\"id\":\"abcd\",\"type\":\"article\",\"href\":\"\",\"slugs\":[],\"tags\":[],\"data\":{\"article\":{\"documents\":{\"type\":\"Group\",\"value\":[{\"linktodoc\":{\"type\":\"Link.document\",\"value\":{\"document\":{\"id\":\"UrDejAEAAFwMyrW9\",\"type\":\"doc\",\"tags\":[],\"slug\":\"installing-meta-micro\"},\"isBroken\":false}},\"desc\":{\"type\":\"StructuredText\",\"value\":[{\"type\":\"paragraph\",\"text\":\"A detailed step by step point of view on how installing happens.\",\"spans\":[]}]}},{\"linktodoc\":{\"type\":\"Link.document\",\"value\":{\"document\":{\"id\":\"UrDmKgEAALwMyrXA\",\"type\":\"doc\",\"tags\":[],\"slug\":\"using-meta-micro\"},\"isBroken\":false}}}]}}}}"
-    document = prismic.Document(json.loads(data))
+def test_group(api_url):
+    data = {
+        "id": "abcd",
+        "type": "article",
+        "href": api_url,
+        "slugs": [],
+        "tags": [],
+        "data": {
+            "article": {
+                "documents": {
+                    "type": "Group",
+                    "value": [
+                        {
+                            "linktodoc": {
+                                "type": "Link.document",
+                                "value": {
+                                    "document": {"id": "UrDejAEAAFwMyrW9", "type": "doc", "tags": [],
+                                                 "slug": "installing-meta-micro"},
+                                    "isBroken": False}
+                            },
+                            "desc": {
+                                "type": "StructuredText",
+                                "value": [
+                                    {
+                                        "type": "paragraph",
+                                        "text": "A detailed step by step point of view on how installing happens.",
+                                        "spans": []
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "linktodoc": {
+                                "type": "Link.document",
+                                "value": {
+                                    "document": {"id": "UrDmKgEAALwMyrXA", "type": "doc", "tags": [],
+                                                 "slug": "using-meta-micro"},
+                                    "isBroken": False
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    document = prismic.Document(data)
 
     def resolver(document_link):
         return "/document/%s/%s" % (document_link.id, document_link.slug)
@@ -190,12 +235,35 @@ def test_group():
     for doc in docs:
         desc = doc.get_structured_text("desc")
         link = doc.get_link("linktodoc")
-    assert docs[0].get_structured_text("desc").as_html(resolver) == "<p>A detailed step by step point of view on how installing happens.</p>"
+    assert docs[0].get_structured_text("desc").as_html(
+        resolver) == "<p>A detailed step by step point of view on how installing happens.</p>"
 
 
-def test_link():
-    data = "{\"id\":\"abcd\",\"type\":\"article\",\"href\":\"\",\"slugs\":[],\"tags\":[],\"data\":{\"article\":{\"source\":{\"type\":\"Link.document\",\"value\":{\"document\":{\"id\":\"UlfoxUnM0wkXYXbE\",\"type\":\"product\",\"tags\":[\"Macaron\"],\"slug\":\"dark-chocolate-macaron\"},\"isBroken\":false}}}}}"
-    document = prismic.Document(json.loads(data))
+def test_link(api_url):
+    data = {
+        "id": "abcd",
+        "type": "article",
+        "href": api_url,
+        "slugs": [],
+        "tags": [],
+        "data": {
+            "article": {
+                "source": {
+                    "type": "Link.document",
+                    "value": {
+                        "document": {
+                            "id": "UlfoxUnM0wkXYXbE",
+                            "type": "product",
+                            "tags": ["Macaron"],
+                            "slug": "dark-chocolate-macaron"
+                        },
+                        "isBroken": False
+                    }
+                }
+            }
+        }
+    }
+    document = prismic.Document(data)
 
     def resolver(document_link):
         return "/document/%s/%s" % (document_link.id, document_link.slug)
@@ -205,26 +273,82 @@ def test_link():
     assert url == "/document/UlfoxUnM0wkXYXbE/dark-chocolate-macaron"
 
 
-def test_embed():
-    data = "{\"id\":\"abcd\",\"type\":\"article\",\"href\":\"\",\"slugs\":[],\"tags\":[],\"data\":{\"article\":{\"video\":{\"type\":\"Embed\",\"value\":{\"oembed\":{\"provider_url\":\"http://www.youtube.com/\",\"type\":\"video\",\"thumbnail_height\":360,\"height\":270,\"thumbnail_url\":\"http://i1.ytimg.com/vi/baGfM6dBzs8/hqdefault.jpg\",\"width\":480,\"provider_name\":\"YouTube\",\"html\":\"<iframe width=\\\"480\\\" height=\\\"270\\\" src=\\\"http://www.youtube.com/embed/baGfM6dBzs8?feature=oembed\\\" frameborder=\\\"0\\\" allowfullscreen></iframe>\",\"author_name\":\"Siobhan Wilson\",\"version\":\"1.0\",\"author_url\":\"http://www.youtube.com/user/siobhanwilsonsongs\",\"thumbnail_width\":480,\"title\":\"Siobhan Wilson - All Dressed Up\",\"embed_url\":\"https://www.youtube.com/watch?v=baGfM6dBzs8\"}}}}}}"
-    document = prismic.Document(json.loads(data))
+def test_embed(api_url):
+    data = {
+        "id": "abcd",
+        "type": "article",
+        "href": api_url,
+        "slugs": [],
+        "tags": [],
+        "data": {
+            "article": {
+                "video": {
+                    "type": "Embed",
+                    "value": {
+                        "oembed": {
+                            "provider_url": "http://www.youtube.com/", "type": "video", "thumbnail_height": 360,
+                            "height": 270, "thumbnail_url": "http://i1.ytimg.com/vi/baGfM6dBzs8/hqdefault.jpg", "width": 480,
+                            "provider_name": "YouTube",
+                            "html": "<iframe width=\"480\" height=\"270\" src=\"http://www.youtube.com/embed/baGfM6dBzs8?feature=oembed\" frameborder=\"0\" allowfullscreen></iframe>",
+                            "author_name": "Siobhan Wilson", "version": "1.0",
+                            "author_url": "http://www.youtube.com/user/siobhanwilsonsongs", "thumbnail_width": 480,
+                            "title": "Siobhan Wilson - All Dressed Up",
+                            "embed_url": "https://www.youtube.com/watch?v=baGfM6dBzs8"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    document = prismic.Document(data)
     video = document.get_embed("article.video")
     # Html is the code to include to embed the object, and depends on the embedded service
     html = video and video.as_html
     assert html == "<div data-oembed=\"https://www.youtube.com/watch?v=baGfM6dBzs8\" data-oembed-type=\"video\" data-oembed-provider=\"YouTube\"><iframe width=\"480\" height=\"270\" src=\"http://www.youtube.com/embed/baGfM6dBzs8?feature=oembed\" frameborder=\"0\" allowfullscreen></iframe></div>"
 
 
-def test_color():
-    data = "{\"id\":\"abcd\",\"type\":\"article\",\"href\":\"\",\"slugs\":[],\"tags\":[],\"data\":{\"article\":{\"background\":{\"type\":\"Color\",\"value\":\"#000000\"}}}}"
-    document = prismic.Document(json.loads(data))
+def test_color(api_url):
+    data = {
+        "id": "abcd",
+        "type": "article",
+        "href": api_url,
+        "slugs": [],
+        "tags": [],
+        "data": {
+            "article": {
+                "background": {
+                    "type": "Color",
+                    "value": "#000000"
+                }
+            }
+        }
+    }
+    document = prismic.Document(data)
     bgcolor = document.get_color("article.background")
     hex = bgcolor.value
     assert hex == "#000000"
 
 
-def test_geopoint():
-    data = "{\"id\":\"abcd\",\"type\":\"article\",\"href\":\"\",\"slugs\":[],\"tags\":[],\"data\":{\"article\":{\"location\":{\"type\":\"GeoPoint\",\"value\":{\"latitude\":48.877108,\"longitude\":2.333879}}}}}"
-    document = prismic.Document(json.loads(data))
+def test_geopoint(api_url):
+    data = {
+        "id": "abcd",
+        "type": "article",
+        "href": api_url,
+        "slugs": [],
+        "tags": [],
+        "data": {
+            "article": {
+                "location": {
+                    "type": "GeoPoint",
+                    "value": {
+                        "latitude": 48.877108,
+                        "longitude": 2.333879
+                    }
+                }
+            }
+        }
+    }
+    document = prismic.Document(data)
     # "near" predicate for GeoPoint fragments
     near = predicates.near("my.store.location", 48.8768767, 2.3338802, 10)
 
@@ -241,5 +365,3 @@ def test_cache(api_url):
     # This api will use the custom cache object
     api = prismic.get(api_url, cache=no_cache)
     assert api is not None
-
-

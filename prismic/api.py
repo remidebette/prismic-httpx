@@ -218,7 +218,7 @@ class SearchForm(object):
         self.fields = form.get("fields") or {}
         self.data = {}
         # default values
-        for field, value in list(self.fields.items()):
+        for field, value in self.fields.items():
             if value.get("default"):
                 self.set(field, value["default"])
         self.access_token = access_token

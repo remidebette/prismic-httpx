@@ -32,23 +32,23 @@ class Fragment(object):
 
         if not cls._types:
             cls._types = {
-                "Image":          Fragment.Image,
-                "Color":          Fragment.Color,
-                "Text":           Fragment.Text,
-                "Select":         Fragment.Text,
-                "Number":         Fragment.Number,
-                "Range":          Fragment.Range,
-                "Date":           Fragment.Date,
-                "Timestamp":      Fragment.Timestamp,
+                "Image": Fragment.Image,
+                "Color": Fragment.Color,
+                "Text": Fragment.Text,
+                "Select": Fragment.Text,
+                "Number": Fragment.Number,
+                "Range": Fragment.Range,
+                "Date": Fragment.Date,
+                "Timestamp": Fragment.Timestamp,
                 "StructuredText": StructuredText,
-                "Link.document":  Fragment.DocumentLink,
-                "Link.file":      Fragment.FileLink,
-                "Link.web":       Fragment.WebLink,
-                "Link.image":     Fragment.ImageLink,
-                "Embed":          Fragment.Embed,
-                "GeoPoint":       Fragment.GeoPoint,
-                "Group":          Fragment.Group,
-                "SliceZone":      Fragment.SliceZone
+                "Link.document": Fragment.DocumentLink,
+                "Link.file": Fragment.FileLink,
+                "Link.web": Fragment.WebLink,
+                "Link.image": Fragment.ImageLink,
+                "Embed": Fragment.Embed,
+                "GeoPoint": Fragment.GeoPoint,
+                "Group": Fragment.Group,
+                "SliceZone": Fragment.SliceZone
             }
 
         fragment_type = data.get("type")
@@ -72,7 +72,7 @@ class Fragment(object):
 
         def get_all(self, field):
             indexed_key = "^%s(\[\d+\])?$" % field
-            return list(v for k, v in list(self.fragments.items()) if re.match(indexed_key, k))
+            return list(v for k, v in self.fragments.items() if re.match(indexed_key, k))
 
         def get_fragment_type(self, field, f_type):
             fragment = self.fragments.get(field)
@@ -149,7 +149,7 @@ class Fragment(object):
             :return: array<DocumentLink>
             """
             result = []
-            for (name, fragment) in list(self.fragments.items()):
+            for (name, fragment) in self.fragments.items():
                 if isinstance(fragment, Fragment.DocumentLink):
                     result.append(fragment)
                 elif isinstance(fragment, Fragment.Group):
@@ -180,7 +180,7 @@ class Fragment(object):
 
         def as_html(self, link_resolver):
             html_list = []
-            for key, fragment in list(self.fragments.items()):
+            for key, fragment in self.fragments.items():
                 html_list.append("""<section data-field="%s">""" % key)
                 html_list.append(self.fragment_to_html(fragment, link_resolver))
                 html_list.append("""</section>""")
@@ -232,7 +232,7 @@ class Fragment(object):
             self.is_broken = value.get("isBroken")
 
             fragments = document.get("data").get(self.type) if "data" in document else {}
-            for (fragment_name, fragment_value) in list(fragments.items()):
+            for (fragment_name, fragment_value) in fragments.items():
                 f_key = "%s.%s" % (self.type, fragment_name)
 
                 if isinstance(fragment_value, list):
@@ -334,13 +334,13 @@ class Fragment(object):
 
         @property
         def as_html(self):
-                return """<a href="%(url)s"><img src="%(url)s" alt="%(alt)s"/></a>""" % self.__dict__
+            return """<a href="%(url)s"><img src="%(url)s" alt="%(alt)s"/></a>""" % self.__dict__
 
         def get_image(self):
-                return self.image
+            return self.image
 
         def get_url(self):
-                return self.url
+            return self.url
 
     class Image(FragmentElement):
         _View = namedtuple('View', ['url', 'width', 'height', 'linkTo'])
@@ -382,7 +382,7 @@ class Fragment(object):
 
             self.main = Fragment.Image.View(main)
             self.views = {
-                view_key: Fragment.Image.View(view_value) for (view_key, view_value) in list(views.items())
+                view_key: Fragment.Image.View(view_value) for (view_key, view_value) in views.items()
             }
             self.link_to = Fragment.Link.parse(link)
 
@@ -802,7 +802,7 @@ class Span(object):
 
     class Hyperlink(SpanElement):
         def __init__(self, value):
-            super(Span.Hyperlink, self).__init__(value)
+            super().__init__(value)
             data = value.get('data')
             self.link = Fragment.Link.parse(data)
             if self.link is None:
@@ -814,6 +814,7 @@ class Span(object):
 
 class Text(object):
     """Base class for blocks"""
+
     def __init__(self, value):
         self.text = value.get("text")
         self.spans = [Span.from_json(span) for span in value.get("spans")]
@@ -821,25 +822,24 @@ class Text(object):
 
 
 class Block(object):
-
     """A block in a structured text"""
     pass
 
     class Heading(Text):
 
         def __init__(self, value):
-            super(Block.Heading, self).__init__(value)
+            super().__init__(value)
             self.level = value.get("type")[-1]
 
     class Paragraph(Text):
 
         def __init__(self, value):
-            super(Block.Paragraph, self).__init__(value)
+            super().__init__(value)
 
     class ListItem(Text):
 
         def __init__(self, value, is_ordered=False):
-            super(Block.ListItem, self).__init__(value)
+            super().__init__(value)
             self.is_ordered = is_ordered
 
     class Embed(object):
@@ -855,6 +855,7 @@ class Block(object):
 
         :param view: The Fragment.Image.View object
         """
+
         def __init__(self, view):
             self.view = view
 
