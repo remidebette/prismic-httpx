@@ -21,29 +21,83 @@ from aiocache import Cache
 from tests import test_prismic_fixtures
 
 
-api_url = "http://micro.prismic.io/api"
-token = "MC5VcXBHWHdFQUFONDZrbWp4.77-9cDx6C3lgJu-_vXZafO-_vXPvv73vv73vv70777-9Ju-_ve-_vSLvv73vv73vv73vv70O77-977-9Me-_vQ"
-fixture_api = json.loads(test_prismic_fixtures.fixture_api)
-fixture_search = json.loads(test_prismic_fixtures.fixture_search)
-fixture_structured_lists = json.loads(test_prismic_fixtures.fixture_structured_lists)
-fixture_empty_paragraph = json.loads(test_prismic_fixtures.fixture_empty_paragraph)
-fixture_block_labels = json.loads(test_prismic_fixtures.fixture_block_labels)
-fixture_store_geopoint = json.loads(test_prismic_fixtures.fixture_store_geopoint)
-fixture_groups = json.loads(test_prismic_fixtures.fixture_groups)
-fixture_image_links = json.loads(test_prismic_fixtures.fixture_image_links)
-fixture_spans_labels = json.loads(test_prismic_fixtures.fixture_spans_labels)
-fixture_custom_html = json.loads(test_prismic_fixtures.fixture_custom_html)
-fixture_slices = json.loads(test_prismic_fixtures.fixture_slices)
-fixture_composite_slices = json.loads(test_prismic_fixtures.fixture_composite_slices)
+@fixture()
+def api_url():
+    return "http://micro.prismic.io/api"
 
 
 @fixture()
-def api():
+def token():
+    return "MC5VcXBHWHdFQUFONDZrbWp4.77-9cDx6C3lgJu-_vXZafO-_vXPvv73vv73vv70777-9Ju-_ve-_vSLvv73vv73vv73vv70O77-977-9Me-_vQ"
+
+
+@fixture()
+def fixture_api():
+    return json.loads(test_prismic_fixtures.fixture_api)
+
+
+@fixture()
+def fixture_search():
+    return json.loads(test_prismic_fixtures.fixture_search)
+
+
+@fixture()
+def fixture_structured_lists():
+    return json.loads(test_prismic_fixtures.fixture_structured_lists)
+
+
+@fixture()
+def fixture_empty_paragraph():
+    return json.loads(test_prismic_fixtures.fixture_empty_paragraph)
+
+
+@fixture()
+def fixture_block_labels():
+    return json.loads(test_prismic_fixtures.fixture_block_labels)
+
+
+@fixture()
+def fixture_store_geopoint():
+    return json.loads(test_prismic_fixtures.fixture_store_geopoint)
+
+
+@fixture()
+def fixture_groups():
+    return json.loads(test_prismic_fixtures.fixture_groups)
+
+
+@fixture()
+def fixture_image_links():
+    return json.loads(test_prismic_fixtures.fixture_image_links)
+
+
+@fixture()
+def fixture_spans_labels():
+    return json.loads(test_prismic_fixtures.fixture_spans_labels)
+
+
+@fixture()
+def fixture_custom_html():
+    return json.loads(test_prismic_fixtures.fixture_custom_html)
+
+
+@fixture()
+def fixture_slices():
+    return json.loads(test_prismic_fixtures.fixture_slices)
+
+
+@fixture()
+def fixture_composite_slices():
+    return json.loads(test_prismic_fixtures.fixture_composite_slices)
+
+
+@fixture()
+async def api(fixture_api, token):
     return prismic.Api(fixture_api, token, Cache(Cache.MEMORY), None)
 
 
 @fixture()
-async def integration_api():
+async def integration_api(api_url, token):
     async with prismic.get(api_url, token) as api:
         yield api
 
@@ -69,7 +123,7 @@ async def test_get_api(integration_api):
 
 
 @pytest.mark.asyncio_cooperative
-async def test_api_get_errors():
+async def test_api_get_errors(api_url):
     with pytest.raises(InvalidTokenError):
         async with prismic.get(api_url, "wrong"):
             pass
@@ -242,21 +296,21 @@ def test_get_master(api):
     assert api.get_master().id == "master"
 
 
-def test_document():
+def test_document(fixture_search):
     docs = [prismic.Document(doc) for doc in fixture_search]
     assert len(docs) == 3
     doc = docs[0]
     assert doc.slug == "vanilla-macaron"
 
 
-def test_empty_slug():
+def test_empty_slug(fixture_search):
     doc_json = fixture_search[0]
     doc_json["slugs"] = None
     doc = prismic.Document(doc_json)
     assert doc.slug == "-"
 
 
-def test_as_html():
+def test_as_html(fixture_search):
     doc_json = fixture_search[0]
     doc = prismic.Document(doc_json)
     expected_html = (
@@ -315,7 +369,7 @@ def test_set_page(api):
 
 
 @fixture()
-def doc():
+def doc(fixture_search):
     doc_json = fixture_search[0]
     return prismic.Document(doc_json)
 
@@ -371,7 +425,7 @@ def test_structured_text_paragraph():
     assert p_html == "<h2>a&amp;b 42 &gt; 41</h2>", "Header HTML escape"
 
 
-def test_spans():
+def test_spans(fixture_spans_labels):
     p = prismic.fragments.StructuredText(fixture_spans_labels.get("value"))
     p_html = p.as_html(lambda x: "/x")
     assert p_html == ("""<p>Two <strong><em>spans</em> with</strong> the same start</p>"""
@@ -379,7 +433,7 @@ def test_spans():
                               """<p>Span till the <span class="tip">end</span></p>""")
 
 
-def test_lists():
+def test_lists(fixture_structured_lists):
     doc_json = fixture_structured_lists[0]
     doc = prismic.Document(doc_json)
     doc_html = doc.get_structured_text("article.content").as_html(lambda x: "/x")
@@ -388,7 +442,7 @@ def test_lists():
     assert doc_html == expected
 
 
-def test_empty_paragraph():
+def test_empty_paragraph(fixture_empty_paragraph):
     doc_json = fixture_empty_paragraph
     doc = prismic.Document(doc_json)
 
@@ -397,7 +451,7 @@ def test_empty_paragraph():
     assert doc_html == expected
 
 
-def test_block_labels():
+def test_block_labels(fixture_block_labels):
     doc = prismic.Document(fixture_block_labels)
 
     doc_html = doc.get_field('announcement.content').as_html(link_resolver)
@@ -405,7 +459,7 @@ def test_block_labels():
     assert doc_html == expected
 
 
-def test_get_text():
+def test_get_text(fixture_search):
     doc_json = fixture_search[0]
     doc = prismic.Document(doc_json)
     assert doc.get_text('product.description') == 'Experience the ultimate vanilla experience. Our vanilla Macarons are made with our very own (in-house) pure extract of Madagascar vanilla, and subtly dusted with our own vanilla sugar (which we make from real vanilla beans).'
@@ -442,20 +496,20 @@ def test_document_link():
     assert p_html == """<p><strong><a href="/document/UbiYbN_mqXkBOgE2/-">bye</a></strong></p>"""
 
 
-def test_geo_point():
+def test_geo_point(fixture_store_geopoint):
     store = prismic.Document(fixture_store_geopoint)
     geopoint = store.get_field("store.coordinates")
     assert geopoint.as_html == ("""<div class="geopoint"><span class="latitude">37.777431</span>"""
                       """<span class="longitude">-122.415419</span></div>""")
 
 
-def test_group():
+def test_group(fixture_groups):
     contributor = prismic.Document(fixture_groups)
     links = contributor.get_group("contributor.links")
     assert len(links.value) == 2
 
 
-def test_slicezone():
+def test_slicezone(fixture_slices):
     maxDiff = 10000
     doc = prismic.Document(fixture_slices)
     slices = doc.get_slice_zone("article.blocks")
@@ -468,7 +522,7 @@ def test_slicezone():
     assert slices_html == expected_html
 
 
-def test_composite_slices():
+def test_composite_slices(fixture_composite_slices):
     maxDiff = 1000
     doc = prismic.Document(fixture_composite_slices)
     slices = doc.get_slice_zone("test.body")
@@ -480,7 +534,7 @@ def test_composite_slices():
     assert len(expected_html) == len(slices_html)
 
 
-def test_image_links():
+def test_image_links(fixture_image_links):
     maxDiff = 10000
     text = prismic.fragments.StructuredText(fixture_image_links.get('value'))
 
@@ -499,7 +553,7 @@ def test_image_links():
     )
 
 
-def test_custom_html():
+def test_custom_html(fixture_custom_html):
     maxDiff = 10000
     text = prismic.fragments.StructuredText(fixture_custom_html.get('value'))
 
@@ -586,14 +640,20 @@ def test_geopoint_near(api):
     assert f.data['q'] == ['[[:d = geopoint.near(my.store.coordinates, 40.689757, -74.0451453, 15)]]']
 
 
-@pytest.mark.asyncio_cooperative
-async def test_expiration():
-    cache = Cache(Cache.MEMORY)
-    await cache.set("toto", "tata", 2)
-    await asyncio.sleep(3)
+@fixture()
+async def cache():
+    return Cache(Cache.MEMORY)
 
+
+@pytest.mark.asyncio_cooperative
+async def test_set_get(cache):
     await cache.set("foo", "bar", 3600)
     assert await cache.get("foo") == "bar"
 
+
+@pytest.mark.asyncio_cooperative
+async def test_expiration(cache):
+    await cache.set("toto", "tata", 2)
+    await asyncio.sleep(3)
     assert await cache.get("toto") is None
 
