@@ -357,11 +357,11 @@
         },
         "pytest-asyncio-cooperative": {
             "hashes": [
-                "sha256:4b7f5ca24669d8569bfbd10aabd7743379cec76f4840ee493d8138f405c327ec",
-                "sha256:ad821f728a6d47399f72b09f847bca331c7ec1a6a758e3f78041d3ec1a9d3b56"
+                "sha256:251ac3b35e3933a98c5ea8c249732819b9b457d403c5e94e088ac72f4e8d43f8",
+                "sha256:68dd6a53cc7c09560a41f6a9636729c57a12b5dbeeddea52f97782f96ff4a803"
             ],
             "index": "pypi",
-            "version": "==0.8.3"
+            "version": "==0.8.5"
         },
         "pytz": {
             "hashes": [

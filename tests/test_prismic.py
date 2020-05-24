@@ -92,7 +92,7 @@ def fixture_composite_slices():
 
 
 @fixture()
-async def api(fixture_api, token):
+def api(fixture_api, token):
     return prismic.Api(fixture_api, token, Cache(Cache.MEMORY), None)
 
 
@@ -641,7 +641,7 @@ def test_geopoint_near(api):
 
 
 @fixture()
-async def cache():
+def cache():
     return Cache(Cache.MEMORY)
 
 
