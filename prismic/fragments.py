@@ -4,16 +4,20 @@
 prismic.fragments
 ~~~~~~~~~~~~~~~~~
 
-This module implements the Fragments.
+DEPRECATED. This module implements the Fragments.
+Kept for history. The new structures module implements the models in API v2 using Pydantic
 
 """
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
 import html
+import sys
 from collections import namedtuple, defaultdict
 import logging
 import re
 import datetime
+
+from .connection import urlparse
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +27,6 @@ class FragmentElement(object):
 
 
 class Fragment(object):
-
     _types = None
 
     @classmethod
@@ -168,15 +171,16 @@ class Fragment(object):
         def fragment_to_html(fragment, link_resolver, html_serializer=None):
             if isinstance(fragment, StructuredText):
                 return fragment.as_html(link_resolver, html_serializer)
-            if isinstance(fragment, Fragment.Group)\
-                    or isinstance(fragment, Fragment.SliceZone)\
-                    or isinstance(fragment, Fragment.DocumentLink)\
-                    or isinstance(fragment, Fragment.Image)\
+            if isinstance(fragment, Fragment.Group) \
+                    or isinstance(fragment, Fragment.SliceZone) \
+                    or isinstance(fragment, Fragment.DocumentLink) \
+                    or isinstance(fragment, Fragment.Image) \
+                    or isinstance(fragment, Image) \
                     or isinstance(fragment, Fragment.Image.View):
                 return fragment.as_html(link_resolver)
             elif fragment:
                 return fragment.as_html
-            return None
+            return ""
 
         def as_html(self, link_resolver):
             html_list = []
@@ -210,19 +214,37 @@ class Fragment(object):
         def parse(data):
             if data is None:
                 return None
-            hyperlink_type = data.get("type")
-            return {
-                "Link.web": Fragment.WebLink,
-                "Link.document": Fragment.DocumentLink,
-                "Link.image": Fragment.MediaLink,
-                "Link.file": Fragment.FileLink
-            }.get(hyperlink_type, lambda x: None)(data.get("value"))
+
+            if 'link_type' in data:
+                hyperlink_type = data.get("link_type")
+                return {
+                    "Web": Fragment.WebLink,
+                    "Document": Fragment.DocumentLink,
+                    "Media": Fragment.MediaLink,
+                    "File": Fragment.FileLink
+                }.get(hyperlink_type, lambda x: None)(data)
+
+            elif 'type' in data:
+                hyperlink_type = data.get("type")
+                return {
+                    "Link.web": Fragment.WebLink,
+                    "Link.document": Fragment.DocumentLink,
+                    "Link.image": Fragment.MediaLink,
+                    "Link.file": Fragment.FileLink
+                }.get(hyperlink_type, lambda x: None)(data.get("value"))
+
+            else:
+                return None
+
 
     class DocumentLink(WithFragments, Link):
         def __init__(self, value):
             Fragment.WithFragments.__init__(self, {})
 
-            document = value.get("document")
+            if "document" in value:
+                document = value.get("document")
+            else:
+                document = value
 
             self.id = document.get("id")
             self.uid = document.get("uid")
@@ -292,7 +314,7 @@ class Fragment(object):
 
     class MediaLink(Link):
         def __init__(self, value):
-            self.image = value.get("image")
+            self.image = value.get("image", value)
             self.name = self.image.get("name")
             self.kind = self.image.get("kind")
             self.url = self.image.get("url")
@@ -484,7 +506,7 @@ class Fragment(object):
             return """<time>%s</time>""" % self.value
 
     class Group(BasicFragment):
-
+        # TODO: Check it works in v2 to support Composite Slices
         def __init__(self, value):
             self.value = []
             for elt in value:
@@ -570,13 +592,25 @@ class Fragment(object):
                 slice_type = elt['slice_type']
                 slice_label = elt.get('slice_label')
 
-                # Old style slice
-                if 'value' in elt:
-                    fragment = Fragment.from_json(elt['value'])
-                    self.slices.append(Fragment.Slice(slice_type, slice_label, fragment))
+                # Check v1
+                if "type" in elt:
+                    # Old style slice
+                    if 'value' in elt:
+                        fragment = Fragment.from_json(elt['value'])
+                        self.slices.append(Fragment.Slice(slice_type, slice_label, fragment))
+                    else:
+                        Fragment.CompositeSlice(slice_type, slice_label, elt)
+                        self.slices.append(Fragment.CompositeSlice(slice_type, slice_label, elt))
+
                 else:
-                    Fragment.CompositeSlice(slice_type, slice_label, elt)
-                    self.slices.append(Fragment.CompositeSlice(slice_type, slice_label, elt))
+                    # Old style slice
+                    if 'value' in elt:
+                        fragment = FragmentV2.from_json(elt['value'])
+                        self.slices.append(Fragment.Slice(slice_type, slice_label, fragment))
+                    else:
+                        Fragment.CompositeSlice(slice_type, slice_label, elt)
+                        self.slices.append(Fragment.CompositeSlice(slice_type, slice_label, elt))
+
 
         def as_html(self, link_resolver):
             html_list = []
@@ -734,7 +768,8 @@ class StructuredText(object):
                 for end_tag in tags_end.get(index):
                     # Close a tag
                     tag = stack.pop()
-                    inner_html = StructuredText.span_write_tag(tag["span"], tag["content"], link_resolver, html_serializer)
+                    inner_html = StructuredText.span_write_tag(tag["span"], tag["content"], link_resolver,
+                                                               html_serializer)
                     if len(stack) == 0:
                         # The tag was top-level
                         html_list.append(inner_html)
@@ -863,38 +898,214 @@ class Block(object):
             return self.view
 
 
-class FragmentV2(Fragment):
+class Image(FragmentElement):
+    _View = namedtuple('View', ['url', 'width', 'height', 'linkTo'])
 
-    _types = None
+    class View(FragmentElement):
+        """View class"""
+
+        def __init__(self, data):
+            self.url = data["url"]
+            self.width = data["dimensions"]["width"]
+            self.height = data["dimensions"]["height"]
+            self.alt = data.get("alt")
+            self.copyright = data.get("copyright")
+            self.link_to = Fragment.Link.parse(data.get("linkTo"))
+            self.label = data.get("label")
+
+        def as_html(self, link_resolver):
+            img_tag = """<img src="%(url)s" alt="%(alt)s" width="%(width)s" height="%(height)s" />""" % {
+                'url': self.url,
+                'width': self.width,
+                'height': self.height,
+                'alt': self.alt if (self.alt is not None) else ""
+            }
+            if self.link_to is None:
+                return img_tag
+            else:
+                url = self.link_to.get_url(link_resolver)
+                return """<a href="%(url)s">%(content)s</a>""" % {
+                    'url': url,
+                    'content': img_tag
+                }
+
+        @property
+        def ratio(self):
+            return self.width / self.height
+
+    def __init__(self, value):
+        main, small, link = value, value.get("small"), value.get("linkTo")
+
+        self.main = Fragment.Image.View(main)
+        self.views = {
+            "small": Fragment.Image.View(small)
+        }
+        self.link_to = Fragment.Link.parse(link)
+
+    def get_view(self, key):
+        if key == "main":
+            return self.main
+        else:
+            return self.views.get(key)
+
+    def as_html(self, link_resolver):
+        view_html = self.main.as_html(link_resolver)
+        if self.link_to is None:
+            return view_html
+        else:
+            return """<a href="%(url)s">%(content)s</a>""" % {
+                'url': self.link_to.get_url(link_resolver),
+                'content': view_html
+            }
+
+
+class Embed(FragmentElement):
+    def __init__(self, value):
+        self.type = value.get("type")
+        self.provider = value.get("provider_name")
+        self.provider = value.get("provider_name")
+        self.url = value.get("embed_url")
+        self.width = value.get("width")
+        self.height = value.get("height")
+        self.html = value.get("html")
+
+    @property
+    def as_html(self):
+        return ("""<div data-oembed="%(url)s" data-oembed-type="%(type)s" data-oembed-provider="%(provider)s">"""
+                "%(html)s"
+                "</div>") % self.__dict__
+
+
+class FragmentV2(Fragment):
+    link_types = {
+        "Document": Fragment.DocumentLink,
+        "File": Fragment.FileLink,
+        "Web": Fragment.WebLink,
+        "Media": Fragment.MediaLink,
+        # "Link.image": Fragment.ImageLink,
+        # "Group": Fragment.Group
+    }
+
+    _types = {
+        "image": Image,
+        "color": Fragment.Color,
+        "text": Fragment.Text,
+        "number": Fragment.Number,
+        "select": Fragment.Text,
+        "range": Fragment.Range,
+        "date": Fragment.Date,
+        "timestamp": Fragment.Timestamp,
+        "stext": StructuredText,
+        "stext_single": StructuredText,
+        "embed": Embed,
+        "geoPoint": Fragment.GeoPoint,
+        "slices": Fragment.SliceZone,
+        "source": Fragment.DocumentLink,
+        "group": Fragment.Group
+    }
 
     @classmethod
     def from_json(cls, data):
         """Create a corresponding fragment object from json."""
+        # In v2, only links types are still declared in the JSON
 
-        if not cls._types:
-            cls._types = {
-                "Image":          Fragment.Image,
-                "Color":          Fragment.Color,
-                "Text":           Fragment.Text,
-                "Select":         Fragment.Text,
-                "Range":          Fragment.Range,
-                "Date":           Fragment.Date,
-                "Timestamp":      Fragment.Timestamp,
-                "StructuredText": StructuredText,
-                "Link.document":  Fragment.DocumentLink,
-                "Link.file":      Fragment.FileLink,
-                "Link.web":       Fragment.WebLink,
-                "Link.image":     Fragment.ImageLink,
-                "Embed":          Fragment.Embed,
-                "GeoPoint":       Fragment.GeoPoint,
-                "Group":          Fragment.Group,
-                "SliceZone":      Fragment.SliceZone
-            }
-
-        fragment_type = data.get("type")
-        f_type = cls._types.get(fragment_type)
+        fragment_type = data.get("link_type")
+        f_type = cls.link_types.get(fragment_type)
 
         if f_type:
-            return f_type(data.get("value"))
+            return f_type(data)
 
         log.warning("fragment_type not found: %s" % fragment_type)
+
+    @classmethod
+    def from_key(cls, key, value):
+        """Create a corresponding fragment object from json."""
+        f_type = cls._types.get(key)
+
+        if f_type:
+            return f_type(value)
+
+        log.warning("fragment_type not found for key: %s" % key)
+
+
+class Document(Fragment.WithFragments):
+    """
+    Represents a Prismic.io Document
+
+    :ivar str id: document id
+    :ivar str uid: document uid
+    :ivar str type:
+    :ivar str href:
+    :ivar array<str> tags:
+    :ivar array<str> slugs:
+    """
+
+    def __init__(self, data):
+        Fragment.WithFragments.__init__(self, {})
+        self._data = data
+
+        parsed = urlparse.urlparse(data['href'])
+        self.api_version = parsed.path.split("/")[2]
+
+        fragments = {}
+        if "data" in data:
+            fragments = data.get("data")
+            if self.api_version == "v1":
+                fragments = fragments.get(self.type)
+
+        for (fragment_name, fragment_value) in fragments.items():
+            if self.api_version == "v1":
+                f_key = "%s.%s" % (self.type, fragment_name)
+
+                if isinstance(fragment_value, list):
+                    for index, fragment_value_element in enumerate(fragment_value):
+                        self.fragments["%s[%s]" % (f_key, index)] = Fragment.from_json(
+                            fragment_value_element)
+
+                elif isinstance(fragment_value, dict):
+                    self.fragments[f_key] = Fragment.from_json(fragment_value)
+
+            else:
+                f_key = fragment_name
+
+                self.fragments[f_key] = FragmentV2.from_key(fragment_name, fragment_value)
+
+        self.slugs = ["-"]
+        if data.get("slugs") is not None:
+            self.slugs = [Document.__unquote(slug) for slug in data.get("slugs")]
+
+    @staticmethod
+    def __unquote(s):
+        if sys.version_info >= (3, 0):
+            return urlparse.unquote(s)
+        else:
+            return urlparse.unquote(s.encode('utf8')).decode('utf8')
+
+    def as_link(self):
+        """
+        Convert the current document to a DocumentLink
+
+        :return: :class:`~prismic.api.Fragment.DocumentLink`
+        """
+        data = self._data.copy()
+        data['slug'] = self.slug
+        return Fragment.DocumentLink({
+            'document': data
+        })
+
+    def __getattr__(self, name):
+        if name.startswith('__'):
+            raise AttributeError
+        return self._data.get(name, None)
+
+    @property
+    def slug(self):
+        """
+        Return the most recent slug
+
+        :return: str slug
+        """
+        return self.slugs[0] if self.slugs else "-"
+
+    def __repr__(self):
+        return "Document %s" % self.fragments

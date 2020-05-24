@@ -49,7 +49,7 @@ Here is a basic example of use:
 >>> import prismic
 >>> async with prismic.get("http://your-repo.prismic.io/api", "access_token") as api:
 ...     doc = await api.get_by_uid("speculoos-macaron")
->>> doc.get_text("product.name")
+>>> doc.data.text
 u'Speculoos Macaron'
 ```
 
@@ -83,7 +83,7 @@ You can override the client parameters in this way:
 ...
 >>> async with prismic.get("http://your-repo.prismic.io/api", "access_token", **client_kwargs) as api:
 ...     doc = await api.get_by_uid("speculoos-macaron")
->>> doc.get_text("product.name")
+>>> doc.data.text
 u'Speculoos Macaron'
 ```
 

@@ -14,6 +14,9 @@ sphinx = "*"
 [packages]
 httpx = "*"
 aiocache = "*"
+pydantic = "*"
+ujson = "*"
+msgpack = "*"
 
 [requires]
 python_version = "3.8"

@@ -10,18 +10,18 @@ This module implements the Prismic API.
 
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
-import sys
 from contextlib import asynccontextmanager
 from copy import copy, deepcopy
 
 import httpx
 from aiocache import Cache
 
-from .connection import get_json, urlparse
+from .connection import get_json
 from .experiments import Experiments
 from . import predicates
 from .exceptions import RefMissing
-from .fragments import Fragment
+from .structures.document import Document
+from .structures.response import Response
 
 from .utils import string_types
 import logging
@@ -151,7 +151,7 @@ class Api(object):
             raise Exception("Bad form name %s, valid form names are: %s" % (name, ', '.join(self.forms)))
         return SearchForm(self.forms.get(name), self.access_token, self.cache, self.client)
 
-    async def query(self, q, ref=None, page_size=None, page=None, orderings=None, after=None, fetch_links=None):
+    async def query(self, q, ref=None, page_size=None, page=None, orderings=None, after=None, fetch_links=None) -> Response:
         if ref is None:
             ref = self.get_master()
         form = self.form('everything').ref(ref)
@@ -167,19 +167,20 @@ class Api(object):
             form.fetch_links(fetch_links)
         return await form.query(q).submit()
 
-    async def query_first(self, q, ref=None):
+    async def query_first(self, q, ref=None) -> Document:
         resp = await self.query(q, ref, page_size=1, page=1)
-        documents = resp.documents
+        documents = resp.results
         if len(documents) > 0:
             return documents[0]
 
-    async def get_by_uid(self, type, uid, ref=None):
+    async def get_by_uid(self, type, uid, ref=None) -> Document:
         return await self.query_first(predicates.at('my.' + type + '.uid', uid), ref)
 
-    async def get_by_id(self, id, ref=None):
+    async def get_by_id(self, id, ref=None) -> Document:
         return await self.query_first(predicates.at('document.id', id), ref)
 
-    async def get_by_ids(self, ids, ref=None, page_size=None, page=None, orderings=None, after=None, fetch_links=None):
+    async def get_by_ids(self, ids,
+                         ref=None, page_size=None, page=None, orderings=None, after=None, fetch_links=None) -> Response:
         return await self.query(
             predicates.in_('document.id', ids),
             ref,
@@ -190,7 +191,7 @@ class Api(object):
             fetch_links=fetch_links
         )
 
-    async def get_single(self, type, ref=None):
+    async def get_single(self, type, ref=None) -> Document:
         return await self.query_first(predicates.at('document.type', type), ref)
 
 
@@ -293,20 +294,21 @@ class SearchForm(object):
         if self.data.get('ref') is None:
             raise RefMissing()
 
-    async def submit(self):
+    async def submit(self) -> Response:
         """
         Submit the query to the Prismic.io server
 
         :return: :class:`~prismic.api.Response`
         """
         self.submit_assert_preconditions()
-        return Response(await get_json(
+        response = await get_json(
             self.action,
             self.data,
             self.access_token,
             self.cache,
             client=self.client
-        ))
+        )
+        return Response.parse_obj(response)
 
     def page(self, page_number):
         """Set query page number
@@ -367,106 +369,4 @@ class SearchForm(object):
         cp.data = deepcopy(self.data)
         return cp
 
-
-class Response(object):
-    """
-    Prismic's response to a query.
-
-    :ivar array<prismic.api.Document> documents: the documents of the current page
-    :ivar int page: the page in this result, starting by 1
-    :ivar int results_per_page: max result in a page
-    :ivar int total_results_size: total number of results for this query
-    :ivar int total_pages: total number of pages for this query
-    :ivar str next_page: URL of the next page (may be None if on the last page )
-    :ivar str prev_page: URL of the previous page (may be None)
-    :ivar int results_size: number of results actually returned for the current page
-    """
-
-    def __init__(self, data):
-        self._data = data
-        self.documents = [Document(d) for d in data.get("results")]
-        self.page = data.get("page")
-        self.next_page = data.get("next_page")
-        self.prev_page = data.get("prev_page")
-        self.results_per_page = data.get("results_per_page")
-        self.total_pages = data.get("total_pages")
-        self.total_results_size = data.get("total_results_size")
-        self.results_size = data.get("results_size")
-
-    def __getattr__(self, name):
-        return self._data.get(name)
-
-    def __repr__(self):
-        return "Response %s" % self._data
-
-
-class Document(Fragment.WithFragments):
-    """
-    Represents a Prismic.io Document
-
-    :ivar str id: document id
-    :ivar str uid: document uid
-    :ivar str type:
-    :ivar str href:
-    :ivar array<str> tags:
-    :ivar array<str> slugs:
-    """
-
-    def __init__(self, data):
-        Fragment.WithFragments.__init__(self, {})
-        self._data = data
-
-        fragments = {}
-        if "data" in data:
-            fragments = data.get("data").get(self.type)
-        for (fragment_name, fragment_value) in list(fragments.items()):
-            f_key = "%s.%s" % (self.type, fragment_name)
-
-            if isinstance(fragment_value, list):
-                for index, fragment_value_element in enumerate(fragment_value):
-                    self.fragments["%s[%s]" % (f_key, index)] = Fragment.from_json(
-                        fragment_value_element)
-
-            elif isinstance(fragment_value, dict):
-                self.fragments[f_key] = Fragment.from_json(fragment_value)
-
-        self.slugs = ["-"]
-        if data.get("slugs") is not None:
-            self.slugs = [Document.__unquote(slug) for slug in data.get("slugs")]
-
-    @staticmethod
-    def __unquote(s):
-        if sys.version_info >= (3, 0):
-            return urlparse.unquote(s)
-        else:
-            return urlparse.unquote(s.encode('utf8')).decode('utf8')
-
-    def as_link(self):
-        """
-        Convert the current document to a DocumentLink
-
-        :return: :class:`~prismic.api.Fragment.DocumentLink`
-        """
-        data = self._data.copy()
-        data['slug'] = self.slug
-        return Fragment.DocumentLink({
-            'document': data
-        })
-
-    def __getattr__(self, name):
-        if name.startswith('__'):
-            raise AttributeError
-        return self._data.get(name, None)
-
-    @property
-    def slug(self):
-        """
-        Return the most recent slug
-
-        :return: str slug
-        """
-        return self.slugs[0] if self.slugs else "-"
-
-    def __repr__(self):
-        return "Document %s" % self.fragments
 

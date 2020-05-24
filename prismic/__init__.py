@@ -7,8 +7,8 @@ __version__ = '0.0.2'
 __author__ = 'Rémi DEBETTE'
 __license__ = 'Apache 2'
 
-from .api import get, Api, SearchForm, Document
-from .fragments import Fragment
+from .api import get, Api, SearchForm
+from .fragments import Fragment, Document
 
 # Set a default logger to prevent "No handler found" warnings
 import logging

@@ -58,6 +58,7 @@ async def get_json(url, params=None, access_token=None, cache=None, ttl=None, cl
     try:
         result, status_code, headers = await get_using_client(full_url, client)
         if status_code == 200:
+            # TODO: Using pydantic parse_raw would leverage ujson and improve performance
             json_result = result.json()
             expire = ttl or get_max_age(headers)
             if expire is not None:
