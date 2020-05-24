@@ -92,7 +92,7 @@ def fixture_composite_slices():
 
 
 @fixture()
-async def api(fixture_api, token):
+def api(fixture_api, token):
     return prismic.Api(fixture_api, token, Cache(Cache.MEMORY), None)
 
 
@@ -117,12 +117,12 @@ def html_serializer(element, content):
     return None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_api(integration_api):
     assert len(integration_api.forms) >= 0
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_api_get_errors(api_url):
     with pytest.raises(InvalidTokenError):
         async with prismic.get(api_url, "wrong"):
@@ -137,7 +137,7 @@ async def test_api_get_errors(api_url):
             pass
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form(integration_api):
     form = integration_api.form("everything")
     form.ref(integration_api.get_master())
@@ -145,7 +145,7 @@ async def test_search_form(integration_api):
     assert len(resp.documents) >= 2
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_orderings(integration_api):
     form = integration_api.form("everything")
     form.ref(integration_api.get_master())
@@ -158,7 +158,7 @@ async def test_search_form_orderings(integration_api):
     assert docs[2].uid == 'all2'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_page_size(integration_api):
     form = integration_api.form("everything").page_size(2)
     form.ref(integration_api.get_master())
@@ -167,7 +167,7 @@ async def test_search_form_page_size(integration_api):
     assert response.results_per_page == 2
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_first_page(integration_api):
     form = integration_api.form("everything").pageSize(2)
     form.ref(integration_api.get_master())
@@ -179,7 +179,7 @@ async def test_search_form_first_page(integration_api):
     assert response.next_page is not None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_page(integration_api):
     form = integration_api.form("everything").pageSize(2).page(2)
     form.ref(integration_api.get_master())
@@ -191,7 +191,7 @@ async def test_search_form_page(integration_api):
     assert response.next_page is not None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_search_form_count(integration_api):
     form = integration_api.form("everything")
     form.ref(integration_api.get_master())
@@ -199,7 +199,7 @@ async def test_search_form_count(integration_api):
     assert nb_docs >= 2
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_query(integration_api):
     resp = await integration_api\
         .query(predicates.at('document.id', 'WHx-gSYAAMkyXYX_'))
@@ -207,31 +207,31 @@ async def test_query(integration_api):
     assert doc.id == 'WHx-gSYAAMkyXYX_'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_query_first(integration_api):
     doc = await integration_api.query_first(predicates.at('document.id', 'WHx-gSYAAMkyXYX_'))
     assert doc.id == 'WHx-gSYAAMkyXYX_'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_query_first_no_result(integration_api):
     doc = await integration_api.query_first(predicates.at('document.id', 'NotAValidId'))
     assert doc is None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_by_uid(integration_api):
     doc = await integration_api.get_by_uid('all', 'all')
     assert doc.id == 'WHx-gSYAAMkyXYX_'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_by_id(integration_api):
     doc = await integration_api.get_by_id('WHx-gSYAAMkyXYX_')
     assert doc.id == 'WHx-gSYAAMkyXYX_'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_by_ids(integration_api):
     result = await integration_api.get_by_ids(['WHx-gSYAAMkyXYX_', 'WHyJqyYAAHgyXbcj'])
     ids = sorted([doc.id for doc in result.documents])
@@ -239,13 +239,13 @@ async def test_get_by_ids(integration_api):
     assert ids[1] == 'WHyJqyYAAHgyXbcj'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_get_single(integration_api):
     doc = await integration_api.get_single('single')
     assert doc.id == 'V_OplCUAACQAE0lA'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_linked_documents(integration_api):
     resp = await integration_api\
         .form("everything")\
@@ -256,7 +256,7 @@ async def test_linked_documents(integration_api):
     assert len(doc.linked_documents) == 2
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_fetch_links(integration_api):
     resp = await integration_api\
         .form('everything')\
@@ -269,7 +269,7 @@ async def test_fetch_links(integration_api):
     assert links[0].get_text('all.text') == 'all1'
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_cooperative
 async def test_fetch_links_list(integration_api):
     resp = await integration_api\
         .form('everything')\
@@ -538,35 +538,39 @@ def test_image_links(fixture_image_links):
     maxDiff = 10000
     text = prismic.fragments.StructuredText(fixture_image_links.get('value'))
 
-    assert text.as_html(link_resolver) == ("""<p>Here is some introductory text.</p>"""
-         """<p>The following image is linked.</p>"""
-         """<p class="block-img"><a href="http://google.com/">"""
-         """<img src="http://fpoimg.com/129x260" alt="" width="260" height="129" /></a></p>"""
-         """<p><strong>More important stuff</strong></p><p>The next is linked to a valid document:</p>"""
-         """<p class="block-img"><a href="/document/UxCQFFFFFFFaaYAH/something-fantastic">"""
-         """<img src="http://fpoimg.com/400x400" alt="" width="400" height="400" /></a></p>"""
-         """<p>The next is linked to a broken document:</p><p class="block-img"><a href="#broken">"""
-         """<img src="http://fpoimg.com/250x250" alt="" width="250" height="250" /></a></p>"""
-         """<p>One more image, this one is not linked:</p><p class="block-img">"""
-         """<img src="http://fpoimg.com/199x300" alt="" width="300" height="199" /></p>""")
+    assert text.as_html(link_resolver) == (
+        """<p>Here is some introductory text.</p>"""
+        """<p>The following image is linked.</p>"""
+        """<p class="block-img"><a href="http://google.com/">"""
+        """<img src="http://fpoimg.com/129x260" alt="" width="260" height="129" /></a></p>"""
+        """<p><strong>More important stuff</strong></p><p>The next is linked to a valid document:</p>"""
+        """<p class="block-img"><a href="/document/UxCQFFFFFFFaaYAH/something-fantastic">"""
+        """<img src="http://fpoimg.com/400x400" alt="" width="400" height="400" /></a></p>"""
+        """<p>The next is linked to a broken document:</p><p class="block-img"><a href="#broken">"""
+        """<img src="http://fpoimg.com/250x250" alt="" width="250" height="250" /></a></p>"""
+        """<p>One more image, this one is not linked:</p><p class="block-img">"""
+        """<img src="http://fpoimg.com/199x300" alt="" width="300" height="199" /></p>"""
+    )
 
 
 def test_custom_html(fixture_custom_html):
     maxDiff = 10000
     text = prismic.fragments.StructuredText(fixture_custom_html.get('value'))
 
-    assert text.as_html(link_resolver, html_serializer) == ("""<p>Here is some introductory text.</p>"""
-         """<p>The following image is linked.</p>"""
-         """<a href="http://google.com/"><img src="http://fpoimg.com/129x260" alt="" width="260" height="129" /></a>"""
-         """<p><strong>More important stuff</strong></p><p>The next is linked to a valid document:</p>"""
-         """<a href="/document/UxCQFFFFFFFaaYAH/something-fantastic">"""
-         """<img src="http://fpoimg.com/400x400" alt="" width="400" height="400" /></a>"""
-         """<p>The next is linked to a broken document:</p><a href="#broken">"""
-         """<img src="http://fpoimg.com/250x250" alt="" width="250" height="250" /></a>"""
-         """<p>One more image, this one is not linked:</p>"""
-         """<img src="http://fpoimg.com/199x300" alt="" width="300" height="199" />"""
-         """<p>This <a class="some-link" href="/document/UlfoxUnM0wkXYXbu/les-bonnes-chosess-internship-a-testimony">"""
-         """paragraph</a> contains an hyperlink.</p>""")
+    assert text.as_html(link_resolver, html_serializer) == (
+        """<p>Here is some introductory text.</p>"""
+        """<p>The following image is linked.</p>"""
+        """<a href="http://google.com/"><img src="http://fpoimg.com/129x260" alt="" width="260" height="129" /></a>"""
+        """<p><strong>More important stuff</strong></p><p>The next is linked to a valid document:</p>"""
+        """<a href="/document/UxCQFFFFFFFaaYAH/something-fantastic">"""
+        """<img src="http://fpoimg.com/400x400" alt="" width="400" height="400" /></a>"""
+        """<p>The next is linked to a broken document:</p><a href="#broken">"""
+        """<img src="http://fpoimg.com/250x250" alt="" width="250" height="250" /></a>"""
+        """<p>One more image, this one is not linked:</p>"""
+        """<img src="http://fpoimg.com/199x300" alt="" width="300" height="199" />"""
+        """<p>This <a class="some-link" href="/document/UlfoxUnM0wkXYXbu/les-bonnes-chosess-internship-a-testimony">"""
+        """paragraph</a> contains an hyperlink.</p>"""
+    )
 
 
 def test_at(api):
@@ -637,19 +641,19 @@ def test_geopoint_near(api):
 
 
 @fixture()
-def cache():
+def custom_cache():
     return Cache(Cache.MEMORY)
 
 
-@pytest.mark.asyncio
-async def test_set_get(cache):
-    await cache.set("foo", "bar", 3600)
-    assert await cache.get("foo") == "bar"
+@pytest.mark.asyncio_cooperative
+async def test_set_get(custom_cache):
+    await custom_cache.set("foo", "bar", 3600)
+    assert await custom_cache.get("foo") == "bar"
 
 
-@pytest.mark.asyncio
-async def test_expiration(cache):
-    await cache.set("toto", "tata", 2)
+@pytest.mark.asyncio_cooperative
+async def test_expiration(custom_cache):
+    await custom_cache.set("toto", "tata", 2)
     await asyncio.sleep(3)
-    assert await cache.get("toto") is None
+    assert await custom_cache.get("toto") is None
 

@@ -5,7 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 pytest = "*"
-pytest-asyncio = "*"
+pytest-asyncio-cooperative = "*"
 setuptools = "*"
 wheel = "*"
 twine = "*"
@@ -16,4 +16,4 @@ httpx = "*"
 aiocache = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"
