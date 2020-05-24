@@ -641,19 +641,19 @@ def test_geopoint_near(api):
 
 
 @fixture()
-def cache():
+def custom_cache():
     return Cache(Cache.MEMORY)
 
 
 @pytest.mark.asyncio_cooperative
-async def test_set_get(cache):
-    await cache.set("foo", "bar", 3600)
-    assert await cache.get("foo") == "bar"
+async def test_set_get(custom_cache):
+    await custom_cache.set("foo", "bar", 3600)
+    assert await custom_cache.get("foo") == "bar"
 
 
 @pytest.mark.asyncio_cooperative
-async def test_expiration(cache):
-    await cache.set("toto", "tata", 2)
+async def test_expiration(custom_cache):
+    await custom_cache.set("toto", "tata", 2)
     await asyncio.sleep(3)
-    assert await cache.get("toto") is None
+    assert await custom_cache.get("toto") is None
 
