@@ -10,6 +10,8 @@ setuptools = "*"
 wheel = "*"
 twine = "*"
 sphinx = "*"
+pylint = "*"
+black = "*"
 
 [packages]
 httpx = "*"
