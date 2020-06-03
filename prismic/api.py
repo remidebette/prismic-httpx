@@ -47,8 +47,10 @@ async def get(url, access_token=None, cache=None, **client_kwargs):
         cache = Cache(Cache.MEMORY)
 
     async with httpx.AsyncClient(**client_kwargs) as client:
+        spec = await get_json(url, access_token=access_token, cache=cache, ttl=5, client=client)
+
         yield Api(
-            await get_json(url, access_token=access_token, cache=cache, ttl=5, client=client),
+            spec,
             access_token,
             cache,
             client
